@@ -1,0 +1,9 @@
+/home/ricardo-chuy/Desktop/PROYECTO3_SISTOS/sincronizacion_calendarizacion/build/Desktop-Debug/CMakeFiles/sincronizacion_calendarizacion.dir
+/home/ricardo-chuy/Desktop/PROYECTO3_SISTOS/sincronizacion_calendarizacion/build/Desktop-Debug/CMakeFiles/edit_cache.dir
+/home/ricardo-chuy/Desktop/PROYECTO3_SISTOS/sincronizacion_calendarizacion/build/Desktop-Debug/CMakeFiles/rebuild_cache.dir
+/home/ricardo-chuy/Desktop/PROYECTO3_SISTOS/sincronizacion_calendarizacion/build/Desktop-Debug/CMakeFiles/list_install_components.dir
+/home/ricardo-chuy/Desktop/PROYECTO3_SISTOS/sincronizacion_calendarizacion/build/Desktop-Debug/CMakeFiles/install.dir
+/home/ricardo-chuy/Desktop/PROYECTO3_SISTOS/sincronizacion_calendarizacion/build/Desktop-Debug/CMakeFiles/install/local.dir
+/home/ricardo-chuy/Desktop/PROYECTO3_SISTOS/sincronizacion_calendarizacion/build/Desktop-Debug/CMakeFiles/install/strip.dir
+/home/ricardo-chuy/Desktop/PROYECTO3_SISTOS/sincronizacion_calendarizacion/build/Desktop-Debug/CMakeFiles/sincronizacion_calendarizacion_autogen_timestamp_deps.dir
+/home/ricardo-chuy/Desktop/PROYECTO3_SISTOS/sincronizacion_calendarizacion/build/Desktop-Debug/CMakeFiles/sincronizacion_calendarizacion_autogen.dir
