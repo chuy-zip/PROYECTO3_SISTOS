@@ -42,10 +42,14 @@ else()
     else()
         add_executable(sincronizacion_calendarizacion
             ${PROJECT_SOURCES}
-            schedulingwindow.h
-            schedulingwindow.cpp
-            synchronizationwindow.h
-            synchronizationwindow.cpp
+
+
+
+
+            schedulingwindow.h schedulingwindow.cpp
+            synchronizationwindow.h synchronizationwindow.cpp
+            schedulingwindow.h schedulingwindow.cpp schedulingwindow.ui
+            synchronizationwindow.h synchronizationwindow.cpp synchronizationwindow.ui
         )
     endif()
 endif()

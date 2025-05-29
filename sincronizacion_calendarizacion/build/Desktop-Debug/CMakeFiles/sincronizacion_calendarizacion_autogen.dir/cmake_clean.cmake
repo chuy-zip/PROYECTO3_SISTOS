@@ -1,6 +1,8 @@
 file(REMOVE_RECURSE
   "CMakeFiles/sincronizacion_calendarizacion_autogen"
   "sincronizacion_calendarizacion_autogen/include/ui_mainwindow.h"
+  "sincronizacion_calendarizacion_autogen/include/ui_schedulingwindow.h"
+  "sincronizacion_calendarizacion_autogen/include/ui_synchronizationwindow.h"
   "sincronizacion_calendarizacion_autogen/mocs_compilation.cpp"
   "sincronizacion_calendarizacion_autogen/timestamp"
 )

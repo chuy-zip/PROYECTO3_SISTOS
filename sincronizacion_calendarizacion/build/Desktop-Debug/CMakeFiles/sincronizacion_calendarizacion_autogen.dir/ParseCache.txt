@@ -601,7 +601,6 @@
  mdp:/usr/include/x86_64-linux-gnu/qt5/QtCore/qline.h
  mdp:/usr/include/x86_64-linux-gnu/qt5/QtCore/qlist.h
  mdp:/usr/include/x86_64-linux-gnu/qt5/QtCore/qlogging.h
- mdp:/usr/include/x86_64-linux-gnu/qt5/QtCore/qmap.h
  mdp:/usr/include/x86_64-linux-gnu/qt5/QtCore/qmargins.h
  mdp:/usr/include/x86_64-linux-gnu/qt5/QtCore/qmetatype.h
  mdp:/usr/include/x86_64-linux-gnu/qt5/QtCore/qnamespace.h
@@ -631,7 +630,6 @@
  mdp:/usr/include/x86_64-linux-gnu/qt5/QtCore/qsystemdetection.h
  mdp:/usr/include/x86_64-linux-gnu/qt5/QtCore/qtcore-config.h
  mdp:/usr/include/x86_64-linux-gnu/qt5/QtCore/qtypeinfo.h
- mdp:/usr/include/x86_64-linux-gnu/qt5/QtCore/qvariant.h
  mdp:/usr/include/x86_64-linux-gnu/qt5/QtCore/qvarlengtharray.h
  mdp:/usr/include/x86_64-linux-gnu/qt5/QtCore/qvector.h
  mdp:/usr/include/x86_64-linux-gnu/qt5/QtCore/qversiontagging.h
@@ -646,32 +644,19 @@
  mdp:/usr/include/x86_64-linux-gnu/qt5/QtGui/qkeysequence.h
  mdp:/usr/include/x86_64-linux-gnu/qt5/QtGui/qmatrix.h
  mdp:/usr/include/x86_64-linux-gnu/qt5/QtGui/qpaintdevice.h
- mdp:/usr/include/x86_64-linux-gnu/qt5/QtGui/qpainter.h
- mdp:/usr/include/x86_64-linux-gnu/qt5/QtGui/qpainterpath.h
  mdp:/usr/include/x86_64-linux-gnu/qt5/QtGui/qpalette.h
- mdp:/usr/include/x86_64-linux-gnu/qt5/QtGui/qpen.h
  mdp:/usr/include/x86_64-linux-gnu/qt5/QtGui/qpixelformat.h
  mdp:/usr/include/x86_64-linux-gnu/qt5/QtGui/qpixmap.h
  mdp:/usr/include/x86_64-linux-gnu/qt5/QtGui/qpolygon.h
  mdp:/usr/include/x86_64-linux-gnu/qt5/QtGui/qregion.h
  mdp:/usr/include/x86_64-linux-gnu/qt5/QtGui/qrgb.h
  mdp:/usr/include/x86_64-linux-gnu/qt5/QtGui/qrgba64.h
- mdp:/usr/include/x86_64-linux-gnu/qt5/QtGui/qtextoption.h
  mdp:/usr/include/x86_64-linux-gnu/qt5/QtGui/qtgui-config.h
  mdp:/usr/include/x86_64-linux-gnu/qt5/QtGui/qtguiglobal.h
  mdp:/usr/include/x86_64-linux-gnu/qt5/QtGui/qtransform.h
  mdp:/usr/include/x86_64-linux-gnu/qt5/QtGui/qwindowdefs.h
- mdp:/usr/include/x86_64-linux-gnu/qt5/QtWidgets/QGraphicsRectItem
- mdp:/usr/include/x86_64-linux-gnu/qt5/QtWidgets/QGraphicsScene
- mdp:/usr/include/x86_64-linux-gnu/qt5/QtWidgets/QGraphicsView
  mdp:/usr/include/x86_64-linux-gnu/qt5/QtWidgets/QMainWindow
- mdp:/usr/include/x86_64-linux-gnu/qt5/QtWidgets/qabstractscrollarea.h
- mdp:/usr/include/x86_64-linux-gnu/qt5/QtWidgets/qframe.h
- mdp:/usr/include/x86_64-linux-gnu/qt5/QtWidgets/qgraphicsitem.h
- mdp:/usr/include/x86_64-linux-gnu/qt5/QtWidgets/qgraphicsscene.h
- mdp:/usr/include/x86_64-linux-gnu/qt5/QtWidgets/qgraphicsview.h
  mdp:/usr/include/x86_64-linux-gnu/qt5/QtWidgets/qmainwindow.h
- mdp:/usr/include/x86_64-linux-gnu/qt5/QtWidgets/qscrollarea.h
  mdp:/usr/include/x86_64-linux-gnu/qt5/QtWidgets/qsizepolicy.h
  mdp:/usr/include/x86_64-linux-gnu/qt5/QtWidgets/qtabwidget.h
  mdp:/usr/include/x86_64-linux-gnu/qt5/QtWidgets/qtwidgets-config.h
@@ -685,6 +670,7 @@
  mdp:/usr/lib/gcc/x86_64-linux-gnu/13/include/stdint.h
  mdp:/usr/lib/gcc/x86_64-linux-gnu/13/include/syslimits.h
 /home/ricardo-chuy/Desktop/PROYECTO3_SISTOS/sincronizacion_calendarizacion/schedulingwindow.cpp
+ uic:ui_schedulingwindow.h
 /home/ricardo-chuy/Desktop/PROYECTO3_SISTOS/sincronizacion_calendarizacion/mainwindow.h
  mmc:Q_OBJECT
  mdp:/home/ricardo-chuy/Desktop/PROYECTO3_SISTOS/sincronizacion_calendarizacion/build/Desktop-Debug/sincronizacion_calendarizacion_autogen/moc_predefs.h
@@ -1022,5 +1008,6 @@
  mdp:/usr/lib/gcc/x86_64-linux-gnu/13/include/syslimits.h
 /home/ricardo-chuy/Desktop/PROYECTO3_SISTOS/sincronizacion_calendarizacion/main.cpp
 /home/ricardo-chuy/Desktop/PROYECTO3_SISTOS/sincronizacion_calendarizacion/synchronizationwindow.cpp
+ uic:ui_synchronizationwindow.h
 /home/ricardo-chuy/Desktop/PROYECTO3_SISTOS/sincronizacion_calendarizacion/mainwindow.cpp
  uic:ui_mainwindow.h

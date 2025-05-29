@@ -2,17 +2,21 @@
 #define SCHEDULINGWINDOW_H
 
 #include <QMainWindow>
-#include <QGraphicsScene>
-#include <QGraphicsRectItem>
-#include <QGraphicsView>
 
-class SchedulingWindow : public QMainWindow {
+namespace Ui {
+class SchedulingWindow;
+}
+
+class SchedulingWindow : public QMainWindow
+{
     Q_OBJECT
+
 public:
     explicit SchedulingWindow(QWidget *parent = nullptr);
+    ~SchedulingWindow();
+
 private:
-    QGraphicsScene *scene;
-    void setupUI();
+    Ui::SchedulingWindow *ui;
 };
 
-#endif
+#endif // SCHEDULINGWINDOW_H

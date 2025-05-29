@@ -31,19 +31,19 @@
 			{
 				"command" : 0,
 				"file" : 0,
-				"line" : 39,
+				"line" : 43,
 				"parent" : 0
 			},
 			{
 				"command" : 1,
 				"file" : 0,
-				"line" : 66,
+				"line" : 74,
 				"parent" : 0
 			},
 			{
 				"command" : 2,
 				"file" : 0,
-				"line" : 49,
+				"line" : 57,
 				"parent" : 0
 			},
 			{
@@ -154,8 +154,8 @@
 				0,
 				1,
 				2,
-				6,
-				8
+				3,
+				4
 			]
 		}
 	],
@@ -230,33 +230,37 @@
 				0,
 				1,
 				2,
-				6,
-				8
+				3,
+				4
 			]
 		},
 		{
 			"name" : "Header Files",
 			"sourceIndexes" : 
 			[
-				3,
 				5,
+				6,
 				7,
-				9
+				11,
+				12,
+				13
 			]
 		},
 		{
 			"name" : "",
 			"sourceIndexes" : 
 			[
-				4,
-				10
+				8,
+				9,
+				10,
+				14
 			]
 		},
 		{
 			"name" : "CMake Rules",
 			"sourceIndexes" : 
 			[
-				11
+				15
 			]
 		}
 	],
@@ -283,7 +287,29 @@
 		},
 		{
 			"backtrace" : 1,
+			"compileGroupIndex" : 0,
+			"path" : "schedulingwindow.cpp",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 1,
+			"compileGroupIndex" : 0,
+			"path" : "synchronizationwindow.cpp",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 1,
 			"path" : "mainwindow.h",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 1,
+			"path" : "schedulingwindow.h",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 1,
+			"path" : "synchronizationwindow.h",
 			"sourceGroupIndex" : 1
 		},
 		{
@@ -293,30 +319,30 @@
 		},
 		{
 			"backtrace" : 1,
-			"path" : "schedulingwindow.h",
-			"sourceGroupIndex" : 1
+			"path" : "schedulingwindow.ui",
+			"sourceGroupIndex" : 2
 		},
 		{
 			"backtrace" : 1,
-			"compileGroupIndex" : 0,
-			"path" : "schedulingwindow.cpp",
-			"sourceGroupIndex" : 0
-		},
-		{
-			"backtrace" : 1,
-			"path" : "synchronizationwindow.h",
-			"sourceGroupIndex" : 1
-		},
-		{
-			"backtrace" : 1,
-			"compileGroupIndex" : 0,
-			"path" : "synchronizationwindow.cpp",
-			"sourceGroupIndex" : 0
+			"path" : "synchronizationwindow.ui",
+			"sourceGroupIndex" : 2
 		},
 		{
 			"backtrace" : 0,
 			"isGenerated" : true,
 			"path" : "build/Desktop-Debug/sincronizacion_calendarizacion_autogen/include/ui_mainwindow.h",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 0,
+			"isGenerated" : true,
+			"path" : "build/Desktop-Debug/sincronizacion_calendarizacion_autogen/include/ui_schedulingwindow.h",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 0,
+			"isGenerated" : true,
+			"path" : "build/Desktop-Debug/sincronizacion_calendarizacion_autogen/include/ui_synchronizationwindow.h",
 			"sourceGroupIndex" : 1
 		},
 		{

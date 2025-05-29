@@ -3,10 +3,20 @@
 
 #include <QMainWindow>
 
-class SynchronizationWindow : public QMainWindow {
+namespace Ui {
+class SynchronizationWindow;
+}
+
+class SynchronizationWindow : public QMainWindow
+{
     Q_OBJECT
+
 public:
     explicit SynchronizationWindow(QWidget *parent = nullptr);
+    ~SynchronizationWindow();
+
+private:
+    Ui::SynchronizationWindow *ui;
 };
 
-#endif
+#endif // SYNCHRONIZATIONWINDOW_H

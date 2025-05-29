@@ -317,17 +317,4 @@ CMakeFiles/sincronizacion_calendarizacion.dir/mainwindow.cpp.o: \
  /usr/include/x86_64-linux-gnu/qt5/QtWidgets/QWidget \
  /usr/include/x86_64-linux-gnu/qt5/QtWidgets/qwidget.h \
  /home/ricardo-chuy/Desktop/PROYECTO3_SISTOS/sincronizacion_calendarizacion/schedulingwindow.h \
- /usr/include/x86_64-linux-gnu/qt5/QtWidgets/QGraphicsScene \
- /usr/include/x86_64-linux-gnu/qt5/QtWidgets/qgraphicsscene.h \
- /usr/include/x86_64-linux-gnu/qt5/QtGui/qpen.h \
- /usr/include/x86_64-linux-gnu/qt5/QtWidgets/QGraphicsRectItem \
- /usr/include/x86_64-linux-gnu/qt5/QtWidgets/qgraphicsitem.h \
- /usr/include/x86_64-linux-gnu/qt5/QtGui/qpainterpath.h \
- /usr/include/x86_64-linux-gnu/qt5/QtWidgets/QGraphicsView \
- /usr/include/x86_64-linux-gnu/qt5/QtWidgets/qgraphicsview.h \
- /usr/include/x86_64-linux-gnu/qt5/QtGui/qpainter.h \
- /usr/include/x86_64-linux-gnu/qt5/QtGui/qtextoption.h \
- /usr/include/x86_64-linux-gnu/qt5/QtWidgets/qscrollarea.h \
- /usr/include/x86_64-linux-gnu/qt5/QtWidgets/qabstractscrollarea.h \
- /usr/include/x86_64-linux-gnu/qt5/QtWidgets/qgraphicsscene.h \
  /home/ricardo-chuy/Desktop/PROYECTO3_SISTOS/sincronizacion_calendarizacion/synchronizationwindow.h
