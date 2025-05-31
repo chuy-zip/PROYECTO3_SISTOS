@@ -12,6 +12,7 @@ cmake_install.cmake
 install_manifest.txt
 *.cmake
 !CMakeLists.txt
+CMakeLists.txt.user*
 
 # Binarios y ejecutables (extender)
 *.out
