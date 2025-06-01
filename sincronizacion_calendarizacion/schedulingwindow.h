@@ -18,17 +18,24 @@ struct Proceso {
     int priority; // Prioridad (para otros algoritmos)
 };
 
+struct ResultadoSimulacion {
+    QString PID;
+    int inicio;
+    int duracion;
+};
+
 class SchedulingWindow : public QMainWindow {
     Q_OBJECT
 
 public:
     explicit SchedulingWindow(QWidget *parent = nullptr);
+    void ejecutarProximaSimulacion();
     ~SchedulingWindow();
 
 private slots:
     void onCargarArchivoClicked();
     void onEjecutarSimulacionClicked();
-    void ejecutarCicloFIFO();
+    QVector<ResultadoSimulacion> ejecutarFIFO(const QVector<Proceso>& procesos);
 
 private:
     Ui::SchedulingWindow *ui;
@@ -37,17 +44,34 @@ private:
     QString contenidoArchivo;
     QVector<QColor> coloresProcesos;
 
-    QTimer *timerFIFO;
-    int cicloActual;
-    int xActual;
-    int indiceProcesoFIFO;
-    int tiempoEjecutadoProcesoActual;
-    QHash<QString, QColor> coloresAsignados;
     int colorIndex;
+
+    QVector<std::function<void()>> simulaciones;
+    int simulacionActual;
+
+    QHash<QString, Proceso> procesosMap;  // Para métricas
+
+    int cicloAnimacion;
+    int xAnimacion;
+    QHash<QString, QColor> colorMapAnimacion;
+    int colorIndexAnimacion;
+    QVector<int> tiemposEsperaAnimacion;
+    QVector<int> tiemposRespuestaAnimacion;
+    int indexAnimacion;
+    QVector<ResultadoSimulacion> resultadoActual;
+
+    int bloqueActual;                   // Para rastrear bloques dentro de un proceso
+    const ResultadoSimulacion* procesoActual;
+
+    void animarSimulacion(const QVector<ResultadoSimulacion>& resultado, const QString& nombreAlgoritmo);
 
     void dibujarDiagramaFIFO();
     void parsearArchivo(const QString &contenido);
     void limpiarEscena();
+
+signals:
+    void simulacionTerminada();
+
 };
 
 #endif // SCHEDULINGWINDOW_H

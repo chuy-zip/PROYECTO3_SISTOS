@@ -13,8 +13,7 @@
 #include <QBrush>
 
 SchedulingWindow::SchedulingWindow(QWidget *parent)
-    : QMainWindow(parent), ui(new Ui::SchedulingWindow),
-    timerFIFO(new QTimer(this)), cicloActual(0), xActual(0), indiceProcesoFIFO(0), tiempoEjecutadoProcesoActual(0), colorIndex(0)
+    : QMainWindow(parent), ui(new Ui::SchedulingWindow)
 {
     ui->setupUi(this);
     setWindowTitle("Simulación de Algoritmos de Calendarización");
@@ -39,7 +38,17 @@ SchedulingWindow::SchedulingWindow(QWidget *parent)
     // Conectar botones a sus slots
     connect(ui->btnCargarArchivo, &QPushButton::clicked, this, &SchedulingWindow::onCargarArchivoClicked);
     connect(ui->btnEjecutarSimulacion, &QPushButton::clicked, this, &SchedulingWindow::onEjecutarSimulacionClicked);
-    connect(timerFIFO, &QTimer::timeout, this, &SchedulingWindow::ejecutarCicloFIFO);
+}
+
+
+void SchedulingWindow::ejecutarProximaSimulacion() {
+    if (simulacionActual < simulaciones.size()) {
+        simulaciones[simulacionActual]();
+        simulacionActual++;
+    } else {
+        // Todas las simulaciones completadas
+        disconnect(this, &SchedulingWindow::simulacionTerminada, this, &SchedulingWindow::ejecutarProximaSimulacion);
+    }
 }
 
 //parseo del archivo txt separado por comas
@@ -57,6 +66,11 @@ void SchedulingWindow::parsearArchivo(const QString &contenido) {
             p.priority = partes[3].trimmed().toInt();
             procesos.append(p);
         }
+    }
+
+    procesosMap.clear();
+    for (const Proceso &p : procesos) {
+        procesosMap[p.PID] = p;
     }
 }
 
@@ -79,83 +93,149 @@ void SchedulingWindow::onCargarArchivoClicked() {
 void SchedulingWindow::onEjecutarSimulacionClicked() {
     qDebug() << "Contenido del archivo:\n" << contenidoArchivo;
 
-    // Verificar qué algoritmos están seleccionados
-    if (ui->checkBoxFIFO->isChecked()) {
-        parsearArchivo(contenidoArchivo);
-        dibujarDiagramaFIFO();
+    ui->metricsTextEdit->clear();
+    parsearArchivo(contenidoArchivo);
 
+    simulaciones.clear();
+    simulacionActual = 0;
+
+    if (ui->checkBoxFIFO->isChecked()) {
+        auto resultado = ejecutarFIFO(procesos);
+        simulaciones.append([=]() {
+            animarSimulacion(resultado, "FIFO");
+        });
     }
+
     if (ui->checkBoxSJF->isChecked()) qDebug() << "Algoritmo SJF seleccionado";
     if (ui->checkBoxRR->isChecked()) qDebug() << "Algoritmo SRT seleccionado";
     if (ui->checkBoxSRT->isChecked()) qDebug() << "Algoritmo Round Robin seleccionado";
     if (ui->checkBoxPriority->isChecked()) qDebug() << "Algoritmo FIFO seleccionado";
 
+    connect(this, &SchedulingWindow::simulacionTerminada, this, &SchedulingWindow::ejecutarProximaSimulacion);
+    if (!simulaciones.isEmpty()) {
+        ejecutarProximaSimulacion();
+    }
+
 }
 
-void SchedulingWindow::dibujarDiagramaFIFO() {
-    limpiarEscena();
-    if (procesos.isEmpty()) return;
+QVector<ResultadoSimulacion> SchedulingWindow::ejecutarFIFO(const QVector<Proceso>& procesosOriginales) {
+    QVector<Proceso> procesos = procesosOriginales;
+    QVector<ResultadoSimulacion> resultado;
 
     std::sort(procesos.begin(), procesos.end(), [](const Proceso &a, const Proceso &b) {
         return a.AT < b.AT;
     });
 
-    coloresAsignados.clear();
-    colorIndex = 0;
-    cicloActual = 0;
-    xActual = 0;
-    indiceProcesoFIFO = 0;
-    tiempoEjecutadoProcesoActual = 0;
+    int tiempoActual = 0;
+    for (const Proceso &p : procesos) {
+        if (tiempoActual < p.AT)
+            tiempoActual = p.AT;
 
-    escenaGantt->addLine(0, 30, 1000, 30, QPen(Qt::black));
+        resultado.append({p.PID, tiempoActual, p.BT});
+        tiempoActual += p.BT;
+    }
 
-    timerFIFO->start(300);
+    return resultado;
 }
 
-void SchedulingWindow::ejecutarCicloFIFO() {
-    if (indiceProcesoFIFO >= procesos.size()) {
-        timerFIFO->stop();
-        // Dibujar línea de tiempo
-        for (int i = 0; i < cicloActual; ++i) {
-            QGraphicsTextItem *cicloText = escenaGantt->addText(QString::number(i));
-            cicloText->setPos(i * 30, 40);
+//aqui voy a poner las funciones de simulacion
+void SchedulingWindow::animarSimulacion(const QVector<ResultadoSimulacion>& resultado, const QString& nombreAlgoritmo) {
+    limpiarEscena();
+    ui->metricsTextEdit->append("Simulación: " + nombreAlgoritmo);
+
+    // Inicializar variables de animación
+    cicloAnimacion = 0;
+    xAnimacion = 0;
+    colorMapAnimacion.clear();
+    colorIndexAnimacion = 0;
+    tiemposEsperaAnimacion.clear();
+    tiemposRespuestaAnimacion.clear();
+    indexAnimacion = 0;
+    bloqueActual = 0;  // Nuevo contador para bloques dentro de un proceso
+    resultadoActual = resultado;
+    procesoActual = nullptr;  // Para rastrear el proceso actual
+
+    // Configuración inicial de la escena
+    QPen pen(Qt::black);
+    //escenaGantt->addLine(0, 30, 1000, 30, pen);
+    ui->graphicsView->setScene(escenaGantt);
+
+    QTimer* timer = new QTimer(this);
+    connect(timer, &QTimer::timeout, this, [=]() {
+        // Si no hay proceso actual, obtener el siguiente
+        if (procesoActual == nullptr) {
+
+            // esto es al final, cuando ya se pintaron todos
+            if (indexAnimacion >= resultadoActual.size()) {
+                // Dibujar números de ciclo
+                for (int i = 0; i < cicloAnimacion; ++i) {
+                    QGraphicsTextItem *cicloText = escenaGantt->addText(QString::number(i));
+                    cicloText->setPos(i * 30, 40);
+                }
+
+                // Calcular métricas
+                double totalEspera = std::accumulate(tiemposEsperaAnimacion.begin(), tiemposEsperaAnimacion.end(), 0.0);
+                double totalRespuesta = std::accumulate(tiemposRespuestaAnimacion.begin(), tiemposRespuestaAnimacion.end(), 0.0);
+                double promedioEspera = totalEspera / tiemposEsperaAnimacion.size();
+                double promedioRespuesta = totalRespuesta / tiemposRespuestaAnimacion.size();
+
+                ui->metricsTextEdit->append("T. Espera Promedio: " + QString::number(promedioEspera));
+                ui->metricsTextEdit->append("T. Respuesta Promedio: " + QString::number(promedioRespuesta));
+                ui->metricsTextEdit->append("-------------\n");
+
+                timer->stop();
+                timer->deleteLater();
+                emit simulacionTerminada();
+                return;
+            }
+
+            procesoActual = &resultadoActual[indexAnimacion];
+
+            // Asignar color si es nuevo proceso
+            if (!colorMapAnimacion.contains(procesoActual->PID)) {
+                colorMapAnimacion[procesoActual->PID] = coloresProcesos[colorIndexAnimacion++ % coloresProcesos.size()];
+            }
+
+            // Dibujar tiempo en el que no tiene proceso
+            while (cicloAnimacion < procesoActual->inicio) {
+                QGraphicsRectItem *idle = escenaGantt->addRect(xAnimacion, 0, 30, 30, pen, QBrush(Qt::lightGray));
+                QGraphicsTextItem *text = escenaGantt->addText("IDLE");
+                text->setPos(xAnimacion + 5, 5);
+                xAnimacion += 30;
+                cicloAnimacion++;
+            }
+
+            bloqueActual = 0;  // Resetear contador de bloques
         }
-        return;
-    }
 
-    const Proceso &p = procesos[indiceProcesoFIFO];
+        // Dibujar solo un bloque del proceso actual
+        if (bloqueActual < procesoActual->duracion) {
+            QGraphicsRectItem *rect = escenaGantt->addRect(xAnimacion, 0, 30, 30, pen, QBrush(colorMapAnimacion[procesoActual->PID]));
+            QGraphicsTextItem *text = escenaGantt->addText(procesoActual->PID);
+            text->setPos(xAnimacion + 10, 5);
+            xAnimacion += 30;
+            cicloAnimacion++;
+            bloqueActual++;
+        } else {
+            // Calcular métricas cuando terminamos con este proceso
+            int espera = procesoActual->inicio - procesosMap[procesoActual->PID].AT;
+            int respuesta = procesoActual->inicio + procesoActual->duracion - procesosMap[procesoActual->PID].AT;
+            tiemposEsperaAnimacion.append(espera);
+            tiemposRespuestaAnimacion.append(respuesta);
 
-    // Si aún no ha llegado el proceso
-    if (cicloActual < p.AT) {
-        QGraphicsRectItem *idle = escenaGantt->addRect(xActual, 0, 30, 30, QPen(Qt::black), QBrush(Qt::lightGray));
-        QGraphicsTextItem *text = escenaGantt->addText("IDLE");
-        text->setPos(xActual + 5, 5);
-        xActual += 30;
-        cicloActual++;
-        return;
-    }
+            // Pasar al siguiente proceso
+            indexAnimacion++;
+            procesoActual = nullptr;
+        }
+    });
 
-    // Asignar color si aún no lo tenía
-    if (!coloresAsignados.contains(p.PID)) {
-        coloresAsignados[p.PID] = coloresProcesos[colorIndex % coloresProcesos.size()];
-        colorIndex++;
-    }
+    connect(timer, &QTimer::destroyed, this, [=]() {
+        if (simulacionActual < simulaciones.size()) {
+            QTimer::singleShot(1000, this, &SchedulingWindow::ejecutarProximaSimulacion);
+        }
+    });
 
-    QColor color = coloresAsignados[p.PID];
-
-    // Dibujar un ciclo de este proceso
-    QGraphicsRectItem *rect = escenaGantt->addRect(xActual, 0, 30, 30, QPen(Qt::black), QBrush(color));
-    QGraphicsTextItem *text = escenaGantt->addText(p.PID);
-    text->setPos(xActual + 10, 5);
-
-    xActual += 30;
-    cicloActual++;
-    tiempoEjecutadoProcesoActual++;
-
-    if (tiempoEjecutadoProcesoActual >= p.BT) {
-        indiceProcesoFIFO++;
-        tiempoEjecutadoProcesoActual = 0;
-    }
+    timer->start(500);  // Velocidad de animación (ms)
 }
 
 
