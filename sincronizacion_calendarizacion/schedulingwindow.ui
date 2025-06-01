@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>675</width>
-    <height>525</height>
+    <width>685</width>
+    <height>569</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -65,12 +65,30 @@
     <property name="geometry">
      <rect>
       <x>40</x>
-      <y>190</y>
-      <width>211</width>
-      <height>80</height>
+      <y>200</y>
+      <width>261</width>
+      <height>95</height>
      </rect>
     </property>
     <layout class="QVBoxLayout" name="verticalLayout_2">
+     <item>
+      <layout class="QHBoxLayout" name="horizontalLayout">
+       <item>
+        <widget class="QLabel" name="label">
+         <property name="text">
+          <string>Quantum</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QSpinBox" name="quantumSpinBox">
+         <property name="layoutDirection">
+          <enum>Qt::LeftToRight</enum>
+         </property>
+        </widget>
+       </item>
+      </layout>
+     </item>
      <item>
       <widget class="QPushButton" name="btnCargarArchivo">
        <property name="text">
@@ -90,10 +108,10 @@
    <widget class="QTextEdit" name="txtContenidoArchivo">
     <property name="geometry">
      <rect>
-      <x>380</x>
+      <x>350</x>
       <y>20</y>
-      <width>271</width>
-      <height>251</height>
+      <width>301</width>
+      <height>271</height>
      </rect>
     </property>
    </widget>
@@ -101,9 +119,19 @@
     <property name="geometry">
      <rect>
       <x>40</x>
-      <y>290</y>
-      <width>611</width>
+      <y>320</y>
+      <width>371</width>
       <height>192</height>
+     </rect>
+    </property>
+   </widget>
+   <widget class="QTextEdit" name="metricsTextEdit">
+    <property name="geometry">
+     <rect>
+      <x>440</x>
+      <y>320</y>
+      <width>211</width>
+      <height>191</height>
      </rect>
     </property>
    </widget>
@@ -113,7 +141,7 @@
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>675</width>
+     <width>685</width>
      <height>23</height>
     </rect>
    </property>

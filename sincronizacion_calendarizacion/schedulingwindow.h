@@ -5,6 +5,7 @@
 #include <QMainWindow>
 #include <QGraphicsScene>
 #include <QVector>
+#include <QTimer>
 
 namespace Ui {
 class SchedulingWindow;
@@ -27,6 +28,7 @@ public:
 private slots:
     void onCargarArchivoClicked();
     void onEjecutarSimulacionClicked();
+    void ejecutarCicloFIFO();
 
 private:
     Ui::SchedulingWindow *ui;
@@ -34,6 +36,14 @@ private:
     QVector<Proceso> procesos;
     QString contenidoArchivo;
     QVector<QColor> coloresProcesos;
+
+    QTimer *timerFIFO;
+    int cicloActual;
+    int xActual;
+    int indiceProcesoFIFO;
+    int tiempoEjecutadoProcesoActual;
+    QHash<QString, QColor> coloresAsignados;
+    int colorIndex;
 
     void dibujarDiagramaFIFO();
     void parsearArchivo(const QString &contenido);
