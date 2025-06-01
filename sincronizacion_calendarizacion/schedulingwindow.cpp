@@ -7,15 +7,53 @@
 #include <QFile>
 #include <QTextStream>
 #include <QDebug>
+#include <QGraphicsTextItem>  // Para QGraphicsTextItem
+#include <QGraphicsRectItem>  // Para QGraphicsRectItem
+#include <QPen>               // Para QPen
+#include <QBrush>
 
 SchedulingWindow::SchedulingWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::SchedulingWindow) {
     ui->setupUi(this);
     setWindowTitle("Simulación de Algoritmos de Calendarización");
     resize(900, 700);
 
+    //colores 20
+
+    coloresProcesos = {
+        QColor(255, 0, 0),     QColor(0, 255, 0),     QColor(0, 0, 255),
+        QColor(255, 255, 0),   QColor(255, 0, 255),   QColor(0, 255, 255),
+        QColor(128, 0, 0),     QColor(0, 128, 0),     QColor(0, 0, 128),
+        QColor(128, 128, 0),   QColor(128, 0, 128),   QColor(0, 128, 128),
+        QColor(192, 192, 192), QColor(128, 128, 128), QColor(153, 102, 204),
+        QColor(255, 128, 0),   QColor(102, 204, 255), QColor(153, 204, 0),
+        QColor(255, 153, 153), QColor(204, 153, 255)
+    };
+
+    // Configurar la escena para el diagrama de Gantt
+    escenaGantt = new QGraphicsScene(this);
+    ui->graphicsView->setScene(escenaGantt);
+
     // Conectar botones a sus slots
     connect(ui->btnCargarArchivo, &QPushButton::clicked, this, &SchedulingWindow::onCargarArchivoClicked);
     connect(ui->btnEjecutarSimulacion, &QPushButton::clicked, this, &SchedulingWindow::onEjecutarSimulacionClicked);
+}
+
+//parseo del archivo txt separado por comas
+void SchedulingWindow::parsearArchivo(const QString &contenido) {
+    procesos.clear();
+    QStringList lineas = contenido.split('\n', Qt::SkipEmptyParts);
+
+    for (const QString &linea : lineas) {
+        QStringList partes = linea.split(',', Qt::SkipEmptyParts);
+        if (partes.size() == 4) {
+            Proceso p;
+            p.PID = partes[0].trimmed();
+            p.BT = partes[1].trimmed().toInt();
+            p.AT = partes[2].trimmed().toInt();
+            p.priority = partes[3].trimmed().toInt();
+            procesos.append(p);
+        }
+    }
 }
 
 void SchedulingWindow::onCargarArchivoClicked() {
@@ -38,12 +76,74 @@ void SchedulingWindow::onEjecutarSimulacionClicked() {
     qDebug() << "Contenido del archivo:\n" << contenidoArchivo;
 
     // Verificar qué algoritmos están seleccionados
-    if (ui->checkBoxFIFO->isChecked()) qDebug() << "Algoritmo FIFO seleccionado";
+    if (ui->checkBoxFIFO->isChecked()) {
+        parsearArchivo(contenidoArchivo);
+        dibujarDiagramaFIFO();
+        // Aquí calcularías y mostrarías las métricas
+    }
     if (ui->checkBoxSJF->isChecked()) qDebug() << "Algoritmo SJF seleccionado";
     if (ui->checkBoxRR->isChecked()) qDebug() << "Algoritmo SRT seleccionado";
     if (ui->checkBoxSRT->isChecked()) qDebug() << "Algoritmo Round Robin seleccionado";
     if (ui->checkBoxPriority->isChecked()) qDebug() << "Algoritmo FIFO seleccionado";
 
+}
+
+void SchedulingWindow::dibujarDiagramaFIFO() {
+    limpiarEscena();
+    if (procesos.isEmpty()) return;
+
+    std::sort(procesos.begin(), procesos.end(), [](const Proceso &a, const Proceso &b) {
+        return a.AT < b.AT;
+    });
+
+    // Mapa para llevar registro de colores asignados
+    QHash<QString, QColor> coloresAsignados;
+    int colorIndex = 0;
+
+    int x = 0;
+    int y = 0;
+    int ciclo = 0;
+    QPen pen(Qt::black);
+    escenaGantt->addLine(0, 30, 1000, 30, pen);
+
+    for (const Proceso &p : procesos) {
+        // Asignar color al proceso si no lo tiene
+        if (!coloresAsignados.contains(p.PID)) {
+            coloresAsignados[p.PID] = coloresProcesos[colorIndex % coloresProcesos.size()];
+            colorIndex++;
+        }
+
+        QColor colorProceso = coloresAsignados[p.PID];
+
+        // Tiempo ocioso
+        while (ciclo < p.AT) {
+            QGraphicsRectItem *idle = escenaGantt->addRect(x, y, 30, 30, pen, QBrush(Qt::lightGray));
+            QGraphicsTextItem *text = escenaGantt->addText("IDLE");
+            text->setPos(x + 5, y + 5);
+            x += 30;
+            ciclo++;
+        }
+
+        // Dibujar proceso
+        for (int i = 0; i < p.BT; i++) {
+            QGraphicsRectItem *rect = escenaGantt->addRect(x, y, 30, 30, pen, QBrush(colorProceso));
+            QGraphicsTextItem *text = escenaGantt->addText(p.PID);
+            text->setPos(x + 10, y + 5);
+            x += 30;
+            ciclo++;
+        }
+    }
+
+    // Dibujar números de ciclo
+    for (int i = 0; i < ciclo; i++) {
+        QGraphicsTextItem *cicloText = escenaGantt->addText(QString::number(i));
+        cicloText->setPos(i * 30, 40);
+    }
+}
+
+// aca voy a poner los destructores
+void SchedulingWindow::limpiarEscena() {
+    escenaGantt->clear();
 }
 
 SchedulingWindow::~SchedulingWindow()

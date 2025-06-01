@@ -1,12 +1,21 @@
+// schedulingwindow.h
 #ifndef SCHEDULINGWINDOW_H
 #define SCHEDULINGWINDOW_H
 
 #include <QMainWindow>
-#include <QString>
+#include <QGraphicsScene>
+#include <QVector>
 
 namespace Ui {
 class SchedulingWindow;
 }
+
+struct Proceso {
+    QString PID;
+    int BT;  // Burst Time
+    int AT;  // Arrival Time
+    int priority; // Prioridad (para otros algoritmos)
+};
 
 class SchedulingWindow : public QMainWindow {
     Q_OBJECT
@@ -16,12 +25,19 @@ public:
     ~SchedulingWindow();
 
 private slots:
-    void onCargarArchivoClicked();   // Slot para cargar archivo
-    void onEjecutarSimulacionClicked(); // Slot para simulación
+    void onCargarArchivoClicked();
+    void onEjecutarSimulacionClicked();
 
 private:
     Ui::SchedulingWindow *ui;
-    QString contenidoArchivo;  // Variable para guardar el contenido del TXT
+    QGraphicsScene *escenaGantt;
+    QVector<Proceso> procesos;
+    QString contenidoArchivo;
+    QVector<QColor> coloresProcesos;
+
+    void dibujarDiagramaFIFO();
+    void parsearArchivo(const QString &contenido);
+    void limpiarEscena();
 };
 
 #endif // SCHEDULINGWINDOW_H
