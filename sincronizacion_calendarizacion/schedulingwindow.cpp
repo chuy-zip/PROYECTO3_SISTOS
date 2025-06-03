@@ -106,7 +106,13 @@ void SchedulingWindow::onEjecutarSimulacionClicked() {
         });
     }
 
-    if (ui->checkBoxSJF->isChecked()) qDebug() << "Algoritmo SJF seleccionado";
+    if (ui->checkBoxSJF->isChecked()) {
+        auto resultado = ejecutarSJF(procesos);
+        simulaciones.append([=]() {
+            animarSimulacion(resultado, "SJF");
+        });
+    }
+
     if (ui->checkBoxRR->isChecked()) qDebug() << "Algoritmo SRT seleccionado";
     if (ui->checkBoxSRT->isChecked()) qDebug() << "Algoritmo Round Robin seleccionado";
     if (ui->checkBoxPriority->isChecked()) qDebug() << "Algoritmo FIFO seleccionado";
@@ -133,6 +139,51 @@ QVector<ResultadoSimulacion> SchedulingWindow::ejecutarFIFO(const QVector<Proces
 
         resultado.append({p.PID, tiempoActual, p.BT});
         tiempoActual += p.BT;
+    }
+
+    return resultado;
+}
+
+QVector<ResultadoSimulacion> SchedulingWindow::ejecutarSJF(const QVector<Proceso>& procesosOriginales) {
+    QVector<Proceso> procesos = procesosOriginales;
+    QVector<ResultadoSimulacion> resultado;
+
+    int tiempoActual = 0;
+    QVector<Proceso> procesosPendientes = procesos;
+    QVector<Proceso> disponibles;
+
+    while (!procesosPendientes.isEmpty()) {
+        // Obtener todos los procesos que han llegado hasta el tiempo actual
+        disponibles.clear();
+        for (int i = 0; i < procesosPendientes.size(); ++i) {
+            if (procesosPendientes[i].AT <= tiempoActual) {
+                disponibles.append(procesosPendientes[i]);
+            }
+        }
+
+        if (!disponibles.isEmpty()) {
+            // Elegir el proceso con menor tiempo de burst
+            std::sort(disponibles.begin(), disponibles.end(), [](const Proceso &a, const Proceso &b) {
+                return a.BT < b.BT;
+            });
+
+            Proceso elegido = disponibles.first();
+
+            // Agregar al resultado
+            resultado.append({elegido.PID, tiempoActual, elegido.BT});
+            tiempoActual += elegido.BT;
+
+            // Eliminar el proceso elegido de los pendientes
+            for (int i = 0; i < procesosPendientes.size(); ++i) {
+                if (procesosPendientes[i].PID == elegido.PID) {
+                    procesosPendientes.removeAt(i);
+                    break;
+                }
+            }
+        } else {
+            // No hay procesos listos aún, avanzar el tiempo
+            tiempoActual++;
+        }
     }
 
     return resultado;
