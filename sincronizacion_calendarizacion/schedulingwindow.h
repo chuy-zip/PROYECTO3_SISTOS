@@ -37,6 +37,8 @@ private slots:
     void onEjecutarSimulacionClicked();
     QVector<ResultadoSimulacion> ejecutarFIFO(const QVector<Proceso>& procesos);
     QVector<ResultadoSimulacion> ejecutarSJF(const QVector<Proceso>& procesosOriginales);
+    QVector<ResultadoSimulacion> ejecutarSRT(const QVector<Proceso>& procesosOriginales);
+
 
 
 private:
@@ -66,6 +68,7 @@ private:
     const ResultadoSimulacion* procesoActual;
 
     void animarSimulacion(const QVector<ResultadoSimulacion>& resultado, const QString& nombreAlgoritmo);
+    void calcularMetricas(const QVector<ResultadoSimulacion>& resultado);
 
     void dibujarDiagramaFIFO();
     void parsearArchivo(const QString &contenido);

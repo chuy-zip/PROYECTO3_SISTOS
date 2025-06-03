@@ -1,8 +1,5 @@
 #include "schedulingwindow.h"
 #include "ui_schedulingwindow.h"
-
-#include "schedulingwindow.h"
-#include "ui_schedulingwindow.h"
 #include <QFileDialog>
 #include <QFile>
 #include <QTextStream>
@@ -113,8 +110,14 @@ void SchedulingWindow::onEjecutarSimulacionClicked() {
         });
     }
 
-    if (ui->checkBoxRR->isChecked()) qDebug() << "Algoritmo SRT seleccionado";
-    if (ui->checkBoxSRT->isChecked()) qDebug() << "Algoritmo Round Robin seleccionado";
+    if (ui->checkBoxSRT->isChecked()) {
+        auto resultado = ejecutarSRT(procesos);
+        simulaciones.append([=]() {
+            animarSimulacion(resultado, "SRT");
+        });
+    }
+
+    if (ui->checkBoxRR->isChecked()) qDebug() << "Algoritmo Round Robin seleccionado";
     if (ui->checkBoxPriority->isChecked()) qDebug() << "Algoritmo FIFO seleccionado";
 
     connect(this, &SchedulingWindow::simulacionTerminada, this, &SchedulingWindow::ejecutarProximaSimulacion);
@@ -189,6 +192,113 @@ QVector<ResultadoSimulacion> SchedulingWindow::ejecutarSJF(const QVector<Proceso
     return resultado;
 }
 
+QVector<ResultadoSimulacion> SchedulingWindow::ejecutarSRT(const QVector<Proceso>& procesosOriginales) {
+    QVector<ResultadoSimulacion> resultado;
+    QVector<Proceso> procesosPendientes = procesosOriginales;
+
+    int tiempoActual = 0;
+    Proceso* procesoActual = nullptr;
+    QMap<QString, int> tiempoRestante;
+    QMap<QString, Proceso*> procesoMap;  // Mapa para búsqueda rápida
+
+    // Inicializar estructuras
+    for (auto& proceso : procesosPendientes) {
+        tiempoRestante[proceso.PID] = proceso.BT;
+        procesoMap[proceso.PID] = &proceso;
+    }
+
+    while (!tiempoRestante.isEmpty()) {
+        // Recolectar procesos disponibles
+        QVector<Proceso*> disponibles;
+        for (auto it = tiempoRestante.begin(); it != tiempoRestante.end(); ++it) {
+            Proceso* proc = procesoMap[it.key()];
+            if (proc->AT <= tiempoActual && it.value() > 0) {
+                disponibles.append(proc);
+            }
+        }
+
+        if (!disponibles.isEmpty()) {
+            // Ordenar por tiempo restante
+            std::sort(disponibles.begin(), disponibles.end(), [&](Proceso* a, Proceso* b) {
+                return tiempoRestante[a->PID] < tiempoRestante[b->PID];
+            });
+
+            Proceso* elegido = disponibles.first();
+
+            // Manejar cambio de proceso
+            if (!procesoActual || procesoActual->PID != elegido->PID) {
+                resultado.append({elegido->PID, tiempoActual, 1});
+            } else {
+                resultado.last().duracion++;
+            }
+
+            procesoActual = elegido;
+            tiempoRestante[elegido->PID]--;
+
+            // Eliminar si terminó
+            if (tiempoRestante[elegido->PID] == 0) {
+
+                tiempoRestante.remove(elegido->PID);
+            }
+
+        }
+
+        tiempoActual++;
+    }
+
+    return resultado;
+}
+
+void SchedulingWindow::calcularMetricas(const QVector<ResultadoSimulacion>& resultado) {
+    QMap<QString, int> tiempoLlegada;
+    QMap<QString, int> tiempoFinalizacion;
+    QMap<QString, int> tiempoCPUUsado;
+
+    // Inicializar con datos de los procesos
+    for (const auto& p : procesosMap) {
+        tiempoLlegada[p.PID] = p.AT;
+        tiempoFinalizacion[p.PID] = 0;
+        tiempoCPUUsado[p.PID] = 0;
+    }
+
+    // Procesar todos los segmentos para encontrar el último y acumular CPU
+    for (const auto& segmento : resultado) {
+        tiempoFinalizacion[segmento.PID] = segmento.inicio + segmento.duracion;
+        tiempoCPUUsado[segmento.PID] += segmento.duracion;
+    }
+
+    // Calcular métricas
+    double totalEspera = 0;
+    double totalRespuesta = 0;
+    int numProcesos = procesosMap.size();
+
+    //ui->metricsTextEdit->append("Métricas detalladas:");
+    for (const auto& p : procesosMap) {
+        int turnaround = tiempoFinalizacion[p.PID] - tiempoLlegada[p.PID];
+        int espera = turnaround - p.BT; // tiempo en ready queue
+
+        totalRespuesta += turnaround;
+        totalEspera += espera;
+
+        //ui->metricsTextEdit->append(
+        //    QString("Proceso %1: Llegada=%2, Final=%3, CPU=%4 => Turnaround=%5, Espera=%6")
+        //        .arg(p.PID)
+        //        .arg(tiempoLlegada[p.PID])
+        //        .arg(tiempoFinalizacion[p.PID])
+        //        .arg(p.BT)
+        //        .arg(turnaround)
+        //        .arg(espera)
+        //    );
+    }
+
+    // Mostrar promedios
+    //ui->metricsTextEdit->append("\nPromedios:");
+    ui->metricsTextEdit->append("Tiempo de respuesta Promedio: " + QString::number(totalRespuesta/numProcesos));
+    ui->metricsTextEdit->append("Tiempo Espera Promedio: " + QString::number(totalEspera/numProcesos));
+    ui->metricsTextEdit->append("--------------------------------");
+}
+
+
 //aqui voy a poner las funciones de simulacion
 void SchedulingWindow::animarSimulacion(const QVector<ResultadoSimulacion>& resultado, const QString& nombreAlgoritmo) {
     limpiarEscena();
@@ -225,18 +335,14 @@ void SchedulingWindow::animarSimulacion(const QVector<ResultadoSimulacion>& resu
                 }
 
                 // Calcular métricas
-                double totalEspera = std::accumulate(tiemposEsperaAnimacion.begin(), tiemposEsperaAnimacion.end(), 0.0);
-                double totalRespuesta = std::accumulate(tiemposRespuestaAnimacion.begin(), tiemposRespuestaAnimacion.end(), 0.0);
-                double promedioEspera = totalEspera / tiemposEsperaAnimacion.size();
-                double promedioRespuesta = totalRespuesta / tiemposRespuestaAnimacion.size();
-
-                ui->metricsTextEdit->append("T. Espera Promedio: " + QString::number(promedioEspera));
-                ui->metricsTextEdit->append("T. Respuesta Promedio: " + QString::number(promedioRespuesta));
-                ui->metricsTextEdit->append("-------------\n");
+                calcularMetricas(resultadoActual);
 
                 timer->stop();
                 timer->deleteLater();
-                emit simulacionTerminada();
+                // Emitir señal después de limpiar
+                QTimer::singleShot(0, this, [=]() {
+                    emit simulacionTerminada();
+                });
                 return;
             }
 
@@ -280,13 +386,7 @@ void SchedulingWindow::animarSimulacion(const QVector<ResultadoSimulacion>& resu
         }
     });
 
-    connect(timer, &QTimer::destroyed, this, [=]() {
-        if (simulacionActual < simulaciones.size()) {
-            QTimer::singleShot(1000, this, &SchedulingWindow::ejecutarProximaSimulacion);
-        }
-    });
-
-    timer->start(500);  // Velocidad de animación (ms)
+    timer->start(400);  // Velocidad de animación (ms)
 }
 
 
