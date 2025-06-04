@@ -48,14 +48,14 @@
      <item>
       <widget class="QCheckBox" name="checkBoxRR">
        <property name="text">
-        <string>Round Robin</string>
+        <string>Round Robin (con Quantum)</string>
        </property>
       </widget>
      </item>
      <item>
       <widget class="QCheckBox" name="checkBoxPriority">
        <property name="text">
-        <string>Priority</string>
+        <string>Priority (con Envejecimiento)</string>
        </property>
       </widget>
      </item>

@@ -43,8 +43,8 @@ void SchedulingWindow::ejecutarProximaSimulacion() {
         simulaciones[simulacionActual]();
         simulacionActual++;
     } else {
-        // Todas las simulaciones completadas
-        disconnect(this, &SchedulingWindow::simulacionTerminada, this, &SchedulingWindow::ejecutarProximaSimulacion);
+        // todas las simulaciones han terminao
+        disconnect(this, &SchedulingWindow::simulacionTerminada, nullptr, nullptr);
     }
 }
 
@@ -120,7 +120,11 @@ void SchedulingWindow::onEjecutarSimulacionClicked() {
     if (ui->checkBoxRR->isChecked()) qDebug() << "Algoritmo Round Robin seleccionado";
     if (ui->checkBoxPriority->isChecked()) qDebug() << "Algoritmo FIFO seleccionado";
 
-    connect(this, &SchedulingWindow::simulacionTerminada, this, &SchedulingWindow::ejecutarProximaSimulacion);
+    disconnect(this, &SchedulingWindow::simulacionTerminada, nullptr, nullptr);
+    connect(this, &SchedulingWindow::simulacionTerminada, this, [=]() {
+        QTimer::singleShot(1000, this, &SchedulingWindow::ejecutarProximaSimulacion);
+    });
+
     if (!simulaciones.isEmpty()) {
         ejecutarProximaSimulacion();
     }
@@ -252,49 +256,58 @@ QVector<ResultadoSimulacion> SchedulingWindow::ejecutarSRT(const QVector<Proceso
 void SchedulingWindow::calcularMetricas(const QVector<ResultadoSimulacion>& resultado) {
     QMap<QString, int> tiempoLlegada;
     QMap<QString, int> tiempoFinalizacion;
+    QMap<QString, int> tiempoInicioEjecucion;  // NUEVO: para el primer inicio
     QMap<QString, int> tiempoCPUUsado;
 
     // Inicializar con datos de los procesos
     for (const auto& p : procesosMap) {
         tiempoLlegada[p.PID] = p.AT;
         tiempoFinalizacion[p.PID] = 0;
+        tiempoInicioEjecucion[p.PID] = -1;  // -1 indica que no ha iniciado
         tiempoCPUUsado[p.PID] = 0;
     }
 
-    // Procesar todos los segmentos para encontrar el último y acumular CPU
+    // Procesar todos los segmentos
     for (const auto& segmento : resultado) {
+        // Registrar el primer inicio de ejecución
+        if (tiempoInicioEjecucion[segmento.PID] == -1) {
+            tiempoInicioEjecucion[segmento.PID] = segmento.inicio;
+        }
+
+        // El tiempo de finalización es el último segmento
         tiempoFinalizacion[segmento.PID] = segmento.inicio + segmento.duracion;
         tiempoCPUUsado[segmento.PID] += segmento.duracion;
     }
 
-    // Calcular métricas
-    double totalEspera = 0;
-    double totalRespuesta = 0;
+    // Calcular métricas según las definiciones corroboradas por el estimado Carlos Canteo
+    //El completion time es el tiempo que pasa desde la submision hasta la finalizacion.
+    //El turnaround es el que pasa desde el inicio de la ejecucion hasta la finalizacion
+    //Y el response/wait es el tiempo desde submission hasta el inicio de ejecucion
+
+    double totalCompletion = 0;
+    double totalTurnaround = 0;
+    double totalResponse = 0;
     int numProcesos = procesosMap.size();
 
-    //ui->metricsTextEdit->append("Métricas detalladas:");
     for (const auto& p : procesosMap) {
-        int turnaround = tiempoFinalizacion[p.PID] - tiempoLlegada[p.PID];
-        int espera = turnaround - p.BT; // tiempo en ready queue
+        // COMPLETION TIME: desde submission (AT) hasta finalización
+        int completionTime = tiempoFinalizacion[p.PID] - tiempoLlegada[p.PID];
 
-        totalRespuesta += turnaround;
-        totalEspera += espera;
+        // TURNAROUND TIME: desde inicio de ejecución hasta finalización
+        int turnaroundTime = tiempoFinalizacion[p.PID] - tiempoInicioEjecucion[p.PID];
 
-        //ui->metricsTextEdit->append(
-        //    QString("Proceso %1: Llegada=%2, Final=%3, CPU=%4 => Turnaround=%5, Espera=%6")
-        //        .arg(p.PID)
-        //        .arg(tiempoLlegada[p.PID])
-        //        .arg(tiempoFinalizacion[p.PID])
-        //        .arg(p.BT)
-        //        .arg(turnaround)
-        //        .arg(espera)
-        //    );
+        // RESPONSE/WAIT TIME: desde submission (AT) hasta inicio de ejecución
+        int responseTime = tiempoInicioEjecucion[p.PID] - tiempoLlegada[p.PID];
+
+        totalCompletion += completionTime;
+        totalTurnaround += turnaroundTime;
+        totalResponse += responseTime;
     }
 
     // Mostrar promedios
-    //ui->metricsTextEdit->append("\nPromedios:");
-    ui->metricsTextEdit->append("Tiempo de respuesta Promedio: " + QString::number(totalRespuesta/numProcesos));
-    ui->metricsTextEdit->append("Tiempo Espera Promedio: " + QString::number(totalEspera/numProcesos));
+    ui->metricsTextEdit->append("Avg Completion Time: " + QString::number(totalCompletion/numProcesos));
+    ui->metricsTextEdit->append("Avg Turnaround Time: " + QString::number(totalTurnaround/numProcesos));
+    ui->metricsTextEdit->append("Avg Waiting Time (Response): " + QString::number(totalResponse/numProcesos));
     ui->metricsTextEdit->append("--------------------------------");
 }
 
