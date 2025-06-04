@@ -53,6 +53,23 @@ public:
 
 private:
     Ui::SynchronizationWindow *ui;
+    QGraphicsScene *scene;
+    QVector<Process> processes;
+    QVector<Resource> resources;
+    QVector<Action> actions;
+    QVector<SimulationStep> simulationSteps;
+    QMap<QString, QColor> processColors;
+    QTimer *simulationTimer;
+    int currentCycle;
+    int currentStep;
+
+    void parseProcessFile(const QString &content);
+    void parseResourceFile(const QString &content);
+    void parseActionFile(const QString &content);
+    void prepareSimulationSteps();
+    void drawTimeline();
+    void updateResourceAvailability();
+    void logMessage(const QString &message);
 };
 
 #endif // SYNCHRONIZATIONWINDOW_H

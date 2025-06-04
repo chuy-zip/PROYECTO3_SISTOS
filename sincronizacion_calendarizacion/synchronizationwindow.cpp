@@ -1,5 +1,15 @@
 #include "synchronizationwindow.h"
 #include "ui_synchronizationwindow.h"
+#include <QFileDialog>
+#include <QFile>
+#include <QTextStream>
+#include <QDebug>
+#include <QGraphicsRectItem>
+#include <QGraphicsTextItem>
+#include <QPen>
+#include <QBrush>
+#include <algorithm>
+
 
 SynchronizationWindow::SynchronizationWindow(QWidget *parent)
     : QMainWindow(parent)
