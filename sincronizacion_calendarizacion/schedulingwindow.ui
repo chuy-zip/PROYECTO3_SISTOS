@@ -85,6 +85,9 @@
          <property name="layoutDirection">
           <enum>Qt::LeftToRight</enum>
          </property>
+         <property name="minimum">
+          <number>1</number>
+         </property>
         </widget>
        </item>
       </layout>

@@ -38,7 +38,7 @@ private slots:
     QVector<ResultadoSimulacion> ejecutarFIFO(const QVector<Proceso>& procesos);
     QVector<ResultadoSimulacion> ejecutarSJF(const QVector<Proceso>& procesosOriginales);
     QVector<ResultadoSimulacion> ejecutarSRT(const QVector<Proceso>& procesosOriginales);
-
+    QVector<ResultadoSimulacion> ejecutarRR(const QVector<Proceso>& procesosOriginales, int quantum);
 
 
 private:

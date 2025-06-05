@@ -8,6 +8,7 @@
 #include <QGraphicsRectItem>  // Para QGraphicsRectItem
 #include <QPen>               // Para QPen
 #include <QBrush>
+#include <QQueue>
 
 SchedulingWindow::SchedulingWindow(QWidget *parent)
     : QMainWindow(parent), ui(new Ui::SchedulingWindow)
@@ -117,8 +118,15 @@ void SchedulingWindow::onEjecutarSimulacionClicked() {
         });
     }
 
-    if (ui->checkBoxRR->isChecked()) qDebug() << "Algoritmo Round Robin seleccionado";
-    if (ui->checkBoxPriority->isChecked()) qDebug() << "Algoritmo FIFO seleccionado";
+    if (ui->checkBoxRR->isChecked()) {
+        int quantum = ui->quantumSpinBox->value(); // Obtenemos el valor del spinbox
+        auto resultado = ejecutarRR(procesos, quantum);
+        simulaciones.append([=]() {
+            animarSimulacion(resultado, "Round Robin (Q=" + QString::number(quantum) + ")");
+        });
+    }
+
+    if (ui->checkBoxPriority->isChecked()) qDebug() << "Algoritmo Priority seleccionado";
 
     disconnect(this, &SchedulingWindow::simulacionTerminada, nullptr, nullptr);
     connect(this, &SchedulingWindow::simulacionTerminada, this, [=]() {
@@ -253,10 +261,73 @@ QVector<ResultadoSimulacion> SchedulingWindow::ejecutarSRT(const QVector<Proceso
     return resultado;
 }
 
+QVector<ResultadoSimulacion> SchedulingWindow::ejecutarRR(const QVector<Proceso>& procesosOriginales, int quantum) {
+    QVector<ResultadoSimulacion> resultado;
+    QVector<Proceso> procesos = procesosOriginales;
+    QMap<QString, int> tiempoRestante;
+    QQueue<Proceso*> colaListos;
+    int tiempoActual = 0;
+
+    // Inicializar tiempo restante
+    for (const auto& p : procesos) {
+        tiempoRestante[p.PID] = p.BT;
+    }
+
+    // Ordenar procesos por tiempo de llegada
+    std::sort(procesos.begin(), procesos.end(), [](const Proceso& a, const Proceso& b) {
+        return a.AT < b.AT;
+    });
+
+    // Índice para nuevos procesos que llegan
+    int nextProceso = 0;
+
+    while (true) {
+        // Agregar procesos que han llegado a la cola de listos
+        while (nextProceso < procesos.size() && procesos[nextProceso].AT <= tiempoActual) {
+            colaListos.enqueue(&procesos[nextProceso]);
+            nextProceso++;
+        }
+
+        if (colaListos.isEmpty()) {
+            if (nextProceso < procesos.size()) {
+                // No hay procesos listos, avanzar al próximo tiempo de llegada
+                tiempoActual = procesos[nextProceso].AT;
+                continue;
+            } else {
+                // Todos los procesos completados
+                break;
+            }
+        }
+
+        Proceso* actual = colaListos.dequeue();
+        int tiempoEjecucion = qMin(quantum, tiempoRestante[actual->PID]);
+
+        // Registrar el segmento de ejecución
+        resultado.append({actual->PID, tiempoActual, tiempoEjecucion});
+
+        // Actualizar tiempo restante
+        tiempoRestante[actual->PID] -= tiempoEjecucion;
+        tiempoActual += tiempoEjecucion;
+
+        // Agregar procesos que llegaron durante esta ejecución
+        while (nextProceso < procesos.size() && procesos[nextProceso].AT < tiempoActual) {
+            colaListos.enqueue(&procesos[nextProceso]);
+            nextProceso++;
+        }
+
+        // Si el proceso no ha terminado, volver a colocarlo en la cola
+        if (tiempoRestante[actual->PID] > 0) {
+            colaListos.enqueue(actual);
+        }
+    }
+
+    return resultado;
+}
+
 void SchedulingWindow::calcularMetricas(const QVector<ResultadoSimulacion>& resultado) {
     QMap<QString, int> tiempoLlegada;
     QMap<QString, int> tiempoFinalizacion;
-    QMap<QString, int> tiempoInicioEjecucion;  // NUEVO: para el primer inicio
+    QMap<QString, int> tiempoInicioEjecucion;
     QMap<QString, int> tiempoCPUUsado;
 
     // Inicializar con datos de los procesos
