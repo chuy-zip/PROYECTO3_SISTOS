@@ -154,9 +154,10 @@ void SchedulingWindow::onEjecutarSimulacionClicked() {
 
     if (ui->checkBoxPriority->isChecked()) {
         heightMul +=1;
-        auto resultado = ejecutarPriorityAging(procesos);
+        int intervaloAging = ui->spinBoxAging->value(); //valor del spinbox
+        auto resultado = ejecutarPriorityAging(procesos, intervaloAging);
         simulaciones.append([=]() {
-            animarSimulacion(resultado, "Priority Aging", heightMul);
+            animarSimulacion(resultado, "Priority Aging (T=" + QString::number(intervaloAging) + ")", heightMul);
         });
     }
 
@@ -356,7 +357,7 @@ QVector<ResultadoSimulacion> SchedulingWindow::ejecutarRR(const QVector<Proceso>
     return resultado;
 }
 
-QVector<ResultadoSimulacion> SchedulingWindow::ejecutarPriorityAging(const QVector<Proceso>& procesosOriginales) {
+QVector<ResultadoSimulacion> SchedulingWindow::ejecutarPriorityAging(const QVector<Proceso>& procesosOriginales, int intervaloAging) {
     QVector<ResultadoSimulacion> resultado;
     QVector<Proceso> procesos = procesosOriginales;
     std::sort(procesos.begin(), procesos.end(), [](const Proceso& a, const Proceso& b) {
@@ -364,7 +365,6 @@ QVector<ResultadoSimulacion> SchedulingWindow::ejecutarPriorityAging(const QVect
     });
 
     int tiempoActual = 0;
-    int intervaloAging = ui->spinBoxAging->value(); //valor del spinbox
     QVector<Proceso*> readyQueue;
     QMap<QString, int> tiempoRestante;
     QMap<QString, int> prioridadActual; // Prioridad dinámica con aging
@@ -417,13 +417,6 @@ QVector<ResultadoSimulacion> SchedulingWindow::ejecutarPriorityAging(const QVect
             // Eliminar si terminó
             if (tiempoRestante[elegido->PID] == 0) {
                 readyQueue.removeAll(elegido);
-            }
-        } else {
-            // Ejecutar IDLE si no hay procesos listos
-            if (resultado.isEmpty() || resultado.last().PID != "IDLE") {
-                resultado.append({"IDLE", tiempoActual, 1});
-            } else {
-                resultado.last().duracion++;
             }
         }
 
@@ -566,7 +559,7 @@ void SchedulingWindow::animarSimulacion(const QVector<ResultadoSimulacion>& resu
             while (cicloAnimacion < procesoActual->inicio) {
                 QGraphicsRectItem *idle = escenaGantt->addRect(xAnimacion, yOffset, 30, BLOCK_HEIGHT, pen, QBrush(Qt::lightGray));
                 QGraphicsTextItem *text = escenaGantt->addText("IDLE");
-                text->setPos(xAnimacion + 5, 5 * heightMult);
+                text->setPos(xAnimacion, yOffset + 5);
                 xAnimacion += 30;
                 cicloAnimacion++;
             }

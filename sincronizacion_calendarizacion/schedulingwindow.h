@@ -39,7 +39,7 @@ private slots:
     QVector<ResultadoSimulacion> ejecutarSJF(const QVector<Proceso>& procesosOriginales);
     QVector<ResultadoSimulacion> ejecutarSRT(const QVector<Proceso>& procesosOriginales);
     QVector<ResultadoSimulacion> ejecutarRR(const QVector<Proceso>& procesosOriginales, int quantum);
-    QVector<ResultadoSimulacion> ejecutarPriorityAging(const QVector<Proceso>& procesosOriginales);
+    QVector<ResultadoSimulacion> ejecutarPriorityAging(const QVector<Proceso>& procesosOriginales, int intervaloAging);
 
 private:
     Ui::SchedulingWindow *ui;
