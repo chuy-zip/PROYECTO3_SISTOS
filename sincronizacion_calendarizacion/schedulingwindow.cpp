@@ -126,7 +126,12 @@ void SchedulingWindow::onEjecutarSimulacionClicked() {
         });
     }
 
-    if (ui->checkBoxPriority->isChecked()) qDebug() << "Algoritmo Priority seleccionado";
+    if (ui->checkBoxPriority->isChecked()) {
+        auto resultado = ejecutarPriorityAging(procesos);
+        simulaciones.append([=]() {
+            animarSimulacion(resultado, "Priority Aging");
+        });
+    }
 
     disconnect(this, &SchedulingWindow::simulacionTerminada, nullptr, nullptr);
     connect(this, &SchedulingWindow::simulacionTerminada, this, [=]() {
@@ -319,6 +324,93 @@ QVector<ResultadoSimulacion> SchedulingWindow::ejecutarRR(const QVector<Proceso>
         if (tiempoRestante[actual->PID] > 0) {
             colaListos.enqueue(actual);
         }
+    }
+
+    return resultado;
+}
+
+QVector<ResultadoSimulacion> SchedulingWindow::ejecutarPriorityAging(const QVector<Proceso>& procesosOriginales) {
+    QVector<ResultadoSimulacion> resultado;
+    QVector<Proceso> procesos = procesosOriginales;
+    std::sort(procesos.begin(), procesos.end(), [](const Proceso& a, const Proceso& b) {
+        return a.AT < b.AT; // Ordenar por tiempo de llegada inicial
+    });
+
+    int tiempoActual = 0;
+    int intervaloAging = ui->spinBoxAging->value(); //valor del spinbox
+    QVector<Proceso*> readyQueue;
+    QMap<QString, int> tiempoRestante;
+    QMap<QString, int> prioridadActual; // Prioridad dinámica con aging
+    QMap<QString, int> ultimoAging;    // Cuando se aplicó último aging
+
+    // Inicialización
+    for (const auto& p : procesos) {
+        tiempoRestante[p.PID] = p.BT;
+        prioridadActual[p.PID] = p.priority;
+        ultimoAging[p.PID] = p.AT;
+    }
+
+    while (true) {
+        // llegado a la ready queue
+        for (auto& p : procesos) {
+            if (p.AT == tiempoActual) {
+                readyQueue.push_back(&p);
+            }
+        }
+
+        // envejecimiento: cada 5 ciclos aumentamos prioridad (disminuimos valor)
+        for (auto& p : readyQueue) {
+            if (tiempoActual - ultimoAging[p->PID] >= intervaloAging) {
+                prioridadActual[p->PID] = std::max(1, prioridadActual[p->PID] - 1);
+                ultimoAging[p->PID] = tiempoActual;
+            }
+        }
+
+        //seleccionar proceso con mayor prioridad, osea el de menor valor. priority 1 es el mas alto
+
+        Proceso* elegido = nullptr;
+        if (!readyQueue.isEmpty()) {
+            std::sort(readyQueue.begin(), readyQueue.end(), [&](Proceso* a, Proceso* b) {
+                return prioridadActual[a->PID] < prioridadActual[b->PID]; // Menor valor = mayor prioridad
+            });
+            elegido = readyQueue.first();
+        }
+
+        // Ejecutar el proceso elegido o IDLE
+        if (elegido && tiempoRestante[elegido->PID] > 0) {
+            // Continuar o crear nuevo segmento
+            if (!resultado.isEmpty() && resultado.last().PID == elegido->PID) {
+                resultado.last().duracion++;
+            } else {
+                resultado.append({elegido->PID, tiempoActual, 1});
+            }
+
+            tiempoRestante[elegido->PID]--;
+
+            // Eliminar si terminó
+            if (tiempoRestante[elegido->PID] == 0) {
+                readyQueue.removeAll(elegido);
+            }
+        } else {
+            // Ejecutar IDLE si no hay procesos listos
+            if (resultado.isEmpty() || resultado.last().PID != "IDLE") {
+                resultado.append({"IDLE", tiempoActual, 1});
+            } else {
+                resultado.last().duracion++;
+            }
+        }
+
+        // verificar condición de término
+        bool todosTerminados = true;
+        for (const auto& p : procesos) {
+            if (tiempoRestante[p.PID] > 0) {
+                todosTerminados = false;
+                break;
+            }
+        }
+        if (todosTerminados) break;
+
+        tiempoActual++;
     }
 
     return resultado;

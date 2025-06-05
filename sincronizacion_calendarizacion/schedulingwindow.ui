@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>685</width>
+    <width>880</width>
     <height>569</height>
    </rect>
   </property>
@@ -18,7 +18,7 @@
     <property name="geometry">
      <rect>
       <x>40</x>
-      <y>20</y>
+      <y>10</y>
       <width>261</width>
       <height>171</height>
      </rect>
@@ -55,7 +55,7 @@
      <item>
       <widget class="QCheckBox" name="checkBoxPriority">
        <property name="text">
-        <string>Priority (con Envejecimiento)</string>
+        <string>Priority (con Aging)</string>
        </property>
       </widget>
      </item>
@@ -65,9 +65,9 @@
     <property name="geometry">
      <rect>
       <x>40</x>
-      <y>200</y>
+      <y>180</y>
       <width>261</width>
-      <height>95</height>
+      <height>130</height>
      </rect>
     </property>
     <layout class="QVBoxLayout" name="verticalLayout_2">
@@ -85,6 +85,24 @@
          <property name="layoutDirection">
           <enum>Qt::LeftToRight</enum>
          </property>
+         <property name="minimum">
+          <number>1</number>
+         </property>
+        </widget>
+       </item>
+      </layout>
+     </item>
+     <item>
+      <layout class="QHBoxLayout" name="horizontalLayout_2">
+       <item>
+        <widget class="QLabel" name="label_2">
+         <property name="text">
+          <string>Tiempo Aging</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QSpinBox" name="spinBoxAging">
          <property name="minimum">
           <number>1</number>
          </property>
@@ -112,9 +130,9 @@
     <property name="geometry">
      <rect>
       <x>350</x>
-      <y>20</y>
-      <width>301</width>
-      <height>271</height>
+      <y>10</y>
+      <width>211</width>
+      <height>301</height>
      </rect>
     </property>
    </widget>
@@ -122,8 +140,8 @@
     <property name="geometry">
      <rect>
       <x>40</x>
-      <y>320</y>
-      <width>371</width>
+      <y>330</y>
+      <width>801</width>
       <height>192</height>
      </rect>
     </property>
@@ -131,10 +149,10 @@
    <widget class="QTextEdit" name="metricsTextEdit">
     <property name="geometry">
      <rect>
-      <x>440</x>
-      <y>320</y>
-      <width>211</width>
-      <height>191</height>
+      <x>580</x>
+      <y>10</y>
+      <width>261</width>
+      <height>301</height>
      </rect>
     </property>
    </widget>
@@ -144,7 +162,7 @@
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>685</width>
+     <width>880</width>
      <height>23</height>
     </rect>
    </property>
