@@ -6,6 +6,7 @@
 #include <QGraphicsScene>
 #include <QVector>
 #include <QTimer>
+#include <QMap>
 
 namespace Ui {
 class SchedulingWindow;
@@ -69,6 +70,8 @@ private:
 
     void animarSimulacion(const QVector<ResultadoSimulacion>& resultado, const QString& nombreAlgoritmo, int heightMult);
     void calcularMetricas(const QVector<ResultadoSimulacion>& resultado);
+
+    QMap<QString, QColor> globalColorMap;
 
     void dibujarDiagramaFIFO();
     void parsearArchivo(const QString &contenido);

@@ -9,6 +9,7 @@
 #include <QPen>               // Para QPen
 #include <QBrush>
 #include <QQueue>
+#include <QMessageBox>
 
 SchedulingWindow::SchedulingWindow(QWidget *parent)
     : QMainWindow(parent), ui(new Ui::SchedulingWindow)
@@ -108,6 +109,24 @@ void SchedulingWindow::onCargarArchivoClicked() {
 }
 
 void SchedulingWindow::onEjecutarSimulacionClicked() {
+
+    if (contenidoArchivo.isEmpty()) {
+        QMessageBox::warning(this,
+                             "Advertencia",
+                             "No se ha cargado ningún archivo de procesos.\nPor favor, cargue un archivo primero.");
+        return;
+    }
+
+    // al menos uno seleccionado
+    if (!ui->checkBoxFIFO->isChecked() &&
+        !ui->checkBoxSJF->isChecked() &&
+        !ui->checkBoxSRT->isChecked() &&
+        !ui->checkBoxRR->isChecked() &&
+        !ui->checkBoxPriority->isChecked()) {
+        QMessageBox::warning(this, "Advertencia",
+                             "No se ha seleccionado ningún algoritmo.\nSeleccione al menos uno.");
+        return;
+    }
 
     limpiarEscena();
     qDebug() << "Contenido del archivo:\n" << contenidoArchivo;
@@ -550,9 +569,9 @@ void SchedulingWindow::animarSimulacion(const QVector<ResultadoSimulacion>& resu
 
             procesoActual = &resultadoActual[indexAnimacion];
 
-            // Asignar color si es nuevo proceso
-            if (!colorMapAnimacion.contains(procesoActual->PID)) {
-                colorMapAnimacion[procesoActual->PID] = coloresProcesos[colorIndexAnimacion++ % coloresProcesos.size()];
+            if (!globalColorMap.contains(procesoActual->PID)) {
+                int colorIndex = globalColorMap.size() % coloresProcesos.size();
+                globalColorMap[procesoActual->PID] = coloresProcesos[colorIndex];
             }
 
             // Dibujar tiempo en el que no tiene proceso
@@ -569,8 +588,8 @@ void SchedulingWindow::animarSimulacion(const QVector<ResultadoSimulacion>& resu
 
         // Dibujar solo un bloque del proceso actual
         if (bloqueActual < procesoActual->duracion) {
-            QGraphicsRectItem *rect = escenaGantt->addRect(xAnimacion, yOffset, 30, BLOCK_HEIGHT, pen, QBrush(colorMapAnimacion[procesoActual->PID]));
-
+            QColor procesoColor = globalColorMap[procesoActual->PID];
+            QGraphicsRectItem *rect = escenaGantt->addRect(xAnimacion, yOffset, 30, BLOCK_HEIGHT, pen, QBrush(procesoColor));
             QGraphicsTextItem *text = escenaGantt->addText(procesoActual->PID);
             text->setPos(xAnimacion + 10, yOffset + 5);
             xAnimacion += 30;
@@ -596,6 +615,7 @@ void SchedulingWindow::animarSimulacion(const QVector<ResultadoSimulacion>& resu
 // aca voy a poner los destructores
 void SchedulingWindow::limpiarEscena() {
     escenaGantt->clear();
+    globalColorMap.clear();
 }
 
 SchedulingWindow::~SchedulingWindow()
