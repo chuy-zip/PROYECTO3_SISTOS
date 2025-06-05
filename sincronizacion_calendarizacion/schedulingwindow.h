@@ -67,7 +67,7 @@ private:
     int bloqueActual;                   // Para rastrear bloques dentro de un proceso
     const ResultadoSimulacion* procesoActual;
 
-    void animarSimulacion(const QVector<ResultadoSimulacion>& resultado, const QString& nombreAlgoritmo);
+    void animarSimulacion(const QVector<ResultadoSimulacion>& resultado, const QString& nombreAlgoritmo, int heightMult);
     void calcularMetricas(const QVector<ResultadoSimulacion>& resultado);
 
     void dibujarDiagramaFIFO();

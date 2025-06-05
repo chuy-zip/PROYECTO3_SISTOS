@@ -83,12 +83,33 @@ void SchedulingWindow::onCargarArchivoClicked() {
     }
 
     QTextStream in(&file);
-    contenidoArchivo = in.readAll();
-    ui->txtContenidoArchivo->setPlainText(contenidoArchivo); // Mostrar contenido en el QTextEdit
+    QString formattedContent;
+    contenidoArchivo.clear();
+
+    // Leer línea por línea y formatear
+    while (!in.atEnd()) {
+        QString line = in.readLine();
+        contenidoArchivo += line + "\n"; // Guardar el contenido original
+
+        QStringList parts = line.split(",");
+        if (parts.size() >= 4) {
+            formattedContent += QString("PID: %1, BT: %2, AT: %3, Priority: %4\n")
+                                    .arg(parts[0].trimmed())
+                                    .arg(parts[1].trimmed())
+                                    .arg(parts[2].trimmed())
+                                    .arg(parts[3].trimmed());
+        } else {
+            formattedContent += line + "\n";
+        }
+    }
+
+    ui->txtContenidoArchivo->setPlainText(formattedContent);
     file.close();
 }
 
 void SchedulingWindow::onEjecutarSimulacionClicked() {
+
+    limpiarEscena();
     qDebug() << "Contenido del archivo:\n" << contenidoArchivo;
 
     ui->metricsTextEdit->clear();
@@ -97,39 +118,45 @@ void SchedulingWindow::onEjecutarSimulacionClicked() {
     simulaciones.clear();
     simulacionActual = 0;
 
+    int heightMul = 1;
+
     if (ui->checkBoxFIFO->isChecked()) {
         auto resultado = ejecutarFIFO(procesos);
         simulaciones.append([=]() {
-            animarSimulacion(resultado, "FIFO");
+            animarSimulacion(resultado, "FIFO", heightMul);
         });
     }
 
     if (ui->checkBoxSJF->isChecked()) {
+        heightMul +=1;
         auto resultado = ejecutarSJF(procesos);
         simulaciones.append([=]() {
-            animarSimulacion(resultado, "SJF");
+            animarSimulacion(resultado, "SJF", heightMul);
         });
     }
 
     if (ui->checkBoxSRT->isChecked()) {
+        heightMul +=1;
         auto resultado = ejecutarSRT(procesos);
         simulaciones.append([=]() {
-            animarSimulacion(resultado, "SRT");
+            animarSimulacion(resultado, "SRT", heightMul);
         });
     }
 
     if (ui->checkBoxRR->isChecked()) {
-        int quantum = ui->quantumSpinBox->value(); // Obtenemos el valor del spinbox
+        heightMul +=1;
+        int quantum = ui->quantumSpinBox->value(); // valor del spinbox
         auto resultado = ejecutarRR(procesos, quantum);
         simulaciones.append([=]() {
-            animarSimulacion(resultado, "Round Robin (Q=" + QString::number(quantum) + ")");
+            animarSimulacion(resultado, "Round Robin (Q=" + QString::number(quantum) + ")", heightMul);
         });
     }
 
     if (ui->checkBoxPriority->isChecked()) {
+        heightMul +=1;
         auto resultado = ejecutarPriorityAging(procesos);
         simulaciones.append([=]() {
-            animarSimulacion(resultado, "Priority Aging");
+            animarSimulacion(resultado, "Priority Aging", heightMul);
         });
     }
 
@@ -475,10 +502,16 @@ void SchedulingWindow::calcularMetricas(const QVector<ResultadoSimulacion>& resu
 }
 
 
-//aqui voy a poner las funciones de simulacion
-void SchedulingWindow::animarSimulacion(const QVector<ResultadoSimulacion>& resultado, const QString& nombreAlgoritmo) {
-    limpiarEscena();
+void SchedulingWindow::animarSimulacion(const QVector<ResultadoSimulacion>& resultado, const QString& nombreAlgoritmo, int heightMult) {
+    //limpiarEscena();
     ui->metricsTextEdit->append("Simulación: " + nombreAlgoritmo);
+
+    // Configuración de espaciado
+    const int BLOCK_HEIGHT = 30;
+    const int VERTICAL_SPACING = 100;  // Espacio entre simulaciones
+    const int BASE_Y_OFFSET = 20;     // Margen superior
+
+    int yOffset = BASE_Y_OFFSET + (heightMult - 1) * VERTICAL_SPACING;
 
     // Inicializar variables de animación
     cicloAnimacion = 0;
@@ -488,7 +521,7 @@ void SchedulingWindow::animarSimulacion(const QVector<ResultadoSimulacion>& resu
     tiemposEsperaAnimacion.clear();
     tiemposRespuestaAnimacion.clear();
     indexAnimacion = 0;
-    bloqueActual = 0;  // Nuevo contador para bloques dentro de un proceso
+    bloqueActual = 0;  // contador para bloques dentro de un proceso
     resultadoActual = resultado;
     procesoActual = nullptr;  // Para rastrear el proceso actual
 
@@ -507,7 +540,7 @@ void SchedulingWindow::animarSimulacion(const QVector<ResultadoSimulacion>& resu
                 // Dibujar números de ciclo
                 for (int i = 0; i < cicloAnimacion; ++i) {
                     QGraphicsTextItem *cicloText = escenaGantt->addText(QString::number(i));
-                    cicloText->setPos(i * 30, 40);
+                    cicloText->setPos(i * 30, yOffset + BLOCK_HEIGHT + 5);
                 }
 
                 // Calcular métricas
@@ -531,9 +564,9 @@ void SchedulingWindow::animarSimulacion(const QVector<ResultadoSimulacion>& resu
 
             // Dibujar tiempo en el que no tiene proceso
             while (cicloAnimacion < procesoActual->inicio) {
-                QGraphicsRectItem *idle = escenaGantt->addRect(xAnimacion, 0, 30, 30, pen, QBrush(Qt::lightGray));
+                QGraphicsRectItem *idle = escenaGantt->addRect(xAnimacion, yOffset, 30, BLOCK_HEIGHT, pen, QBrush(Qt::lightGray));
                 QGraphicsTextItem *text = escenaGantt->addText("IDLE");
-                text->setPos(xAnimacion + 5, 5);
+                text->setPos(xAnimacion + 5, 5 * heightMult);
                 xAnimacion += 30;
                 cicloAnimacion++;
             }
@@ -543,9 +576,10 @@ void SchedulingWindow::animarSimulacion(const QVector<ResultadoSimulacion>& resu
 
         // Dibujar solo un bloque del proceso actual
         if (bloqueActual < procesoActual->duracion) {
-            QGraphicsRectItem *rect = escenaGantt->addRect(xAnimacion, 0, 30, 30, pen, QBrush(colorMapAnimacion[procesoActual->PID]));
+            QGraphicsRectItem *rect = escenaGantt->addRect(xAnimacion, yOffset, 30, BLOCK_HEIGHT, pen, QBrush(colorMapAnimacion[procesoActual->PID]));
+
             QGraphicsTextItem *text = escenaGantt->addText(procesoActual->PID);
-            text->setPos(xAnimacion + 10, 5);
+            text->setPos(xAnimacion + 10, yOffset + 5);
             xAnimacion += 30;
             cicloAnimacion++;
             bloqueActual++;

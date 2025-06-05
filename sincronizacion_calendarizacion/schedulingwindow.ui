@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>880</width>
+    <width>884</width>
     <height>569</height>
    </rect>
   </property>
@@ -129,9 +129,9 @@
    <widget class="QTextEdit" name="txtContenidoArchivo">
     <property name="geometry">
      <rect>
-      <x>350</x>
+      <x>330</x>
       <y>10</y>
-      <width>211</width>
+      <width>231</width>
       <height>301</height>
      </rect>
     </property>
@@ -162,7 +162,7 @@
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>880</width>
+     <width>884</width>
      <height>23</height>
     </rect>
    </property>
