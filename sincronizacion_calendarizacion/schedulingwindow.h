@@ -6,6 +6,7 @@
 #include <QGraphicsScene>
 #include <QVector>
 #include <QTimer>
+#include <QMap>
 
 namespace Ui {
 class SchedulingWindow;
@@ -38,8 +39,8 @@ private slots:
     QVector<ResultadoSimulacion> ejecutarFIFO(const QVector<Proceso>& procesos);
     QVector<ResultadoSimulacion> ejecutarSJF(const QVector<Proceso>& procesosOriginales);
     QVector<ResultadoSimulacion> ejecutarSRT(const QVector<Proceso>& procesosOriginales);
-
-
+    QVector<ResultadoSimulacion> ejecutarRR(const QVector<Proceso>& procesosOriginales, int quantum);
+    QVector<ResultadoSimulacion> ejecutarPriorityAging(const QVector<Proceso>& procesosOriginales, int intervaloAging);
 
 private:
     Ui::SchedulingWindow *ui;
@@ -67,8 +68,10 @@ private:
     int bloqueActual;                   // Para rastrear bloques dentro de un proceso
     const ResultadoSimulacion* procesoActual;
 
-    void animarSimulacion(const QVector<ResultadoSimulacion>& resultado, const QString& nombreAlgoritmo);
+    void animarSimulacion(const QVector<ResultadoSimulacion>& resultado, const QString& nombreAlgoritmo, int heightMult);
     void calcularMetricas(const QVector<ResultadoSimulacion>& resultado);
+
+    QMap<QString, QColor> globalColorMap;
 
     void dibujarDiagramaFIFO();
     void parsearArchivo(const QString &contenido);

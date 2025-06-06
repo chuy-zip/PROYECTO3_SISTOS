@@ -8,6 +8,8 @@
 #include <QGraphicsRectItem>  // Para QGraphicsRectItem
 #include <QPen>               // Para QPen
 #include <QBrush>
+#include <QQueue>
+#include <QMessageBox>
 
 SchedulingWindow::SchedulingWindow(QWidget *parent)
     : QMainWindow(parent), ui(new Ui::SchedulingWindow)
@@ -82,12 +84,51 @@ void SchedulingWindow::onCargarArchivoClicked() {
     }
 
     QTextStream in(&file);
-    contenidoArchivo = in.readAll();
-    ui->txtContenidoArchivo->setPlainText(contenidoArchivo); // Mostrar contenido en el QTextEdit
+    QString formattedContent;
+    contenidoArchivo.clear();
+
+    // Leer línea por línea y formatear
+    while (!in.atEnd()) {
+        QString line = in.readLine();
+        contenidoArchivo += line + "\n"; // Guardar el contenido original
+
+        QStringList parts = line.split(",");
+        if (parts.size() >= 4) {
+            formattedContent += QString("PID: %1, BT: %2, AT: %3, Priority: %4\n")
+                                    .arg(parts[0].trimmed())
+                                    .arg(parts[1].trimmed())
+                                    .arg(parts[2].trimmed())
+                                    .arg(parts[3].trimmed());
+        } else {
+            formattedContent += line + "\n";
+        }
+    }
+
+    ui->txtContenidoArchivo->setPlainText(formattedContent);
     file.close();
 }
 
 void SchedulingWindow::onEjecutarSimulacionClicked() {
+
+    if (contenidoArchivo.isEmpty()) {
+        QMessageBox::warning(this,
+                             "Advertencia",
+                             "No se ha cargado ningún archivo de procesos.\nPor favor, cargue un archivo primero.");
+        return;
+    }
+
+    // al menos uno seleccionado
+    if (!ui->checkBoxFIFO->isChecked() &&
+        !ui->checkBoxSJF->isChecked() &&
+        !ui->checkBoxSRT->isChecked() &&
+        !ui->checkBoxRR->isChecked() &&
+        !ui->checkBoxPriority->isChecked()) {
+        QMessageBox::warning(this, "Advertencia",
+                             "No se ha seleccionado ningún algoritmo.\nSeleccione al menos uno.");
+        return;
+    }
+
+    limpiarEscena();
     qDebug() << "Contenido del archivo:\n" << contenidoArchivo;
 
     ui->metricsTextEdit->clear();
@@ -96,29 +137,48 @@ void SchedulingWindow::onEjecutarSimulacionClicked() {
     simulaciones.clear();
     simulacionActual = 0;
 
+    int heightMul = 1;
+
     if (ui->checkBoxFIFO->isChecked()) {
         auto resultado = ejecutarFIFO(procesos);
         simulaciones.append([=]() {
-            animarSimulacion(resultado, "FIFO");
+            animarSimulacion(resultado, "FIFO", heightMul);
         });
     }
 
     if (ui->checkBoxSJF->isChecked()) {
+        heightMul +=1;
         auto resultado = ejecutarSJF(procesos);
         simulaciones.append([=]() {
-            animarSimulacion(resultado, "SJF");
+            animarSimulacion(resultado, "SJF", heightMul);
         });
     }
 
     if (ui->checkBoxSRT->isChecked()) {
+        heightMul +=1;
         auto resultado = ejecutarSRT(procesos);
         simulaciones.append([=]() {
-            animarSimulacion(resultado, "SRT");
+            animarSimulacion(resultado, "SRT", heightMul);
         });
     }
 
-    if (ui->checkBoxRR->isChecked()) qDebug() << "Algoritmo Round Robin seleccionado";
-    if (ui->checkBoxPriority->isChecked()) qDebug() << "Algoritmo FIFO seleccionado";
+    if (ui->checkBoxRR->isChecked()) {
+        heightMul +=1;
+        int quantum = ui->quantumSpinBox->value(); // valor del spinbox
+        auto resultado = ejecutarRR(procesos, quantum);
+        simulaciones.append([=]() {
+            animarSimulacion(resultado, "Round Robin (Q=" + QString::number(quantum) + ")", heightMul);
+        });
+    }
+
+    if (ui->checkBoxPriority->isChecked()) {
+        heightMul +=1;
+        int intervaloAging = ui->spinBoxAging->value(); //valor del spinbox
+        auto resultado = ejecutarPriorityAging(procesos, intervaloAging);
+        simulaciones.append([=]() {
+            animarSimulacion(resultado, "Priority Aging (T=" + QString::number(intervaloAging) + ")", heightMul);
+        });
+    }
 
     disconnect(this, &SchedulingWindow::simulacionTerminada, nullptr, nullptr);
     connect(this, &SchedulingWindow::simulacionTerminada, this, [=]() {
@@ -253,10 +313,152 @@ QVector<ResultadoSimulacion> SchedulingWindow::ejecutarSRT(const QVector<Proceso
     return resultado;
 }
 
+QVector<ResultadoSimulacion> SchedulingWindow::ejecutarRR(const QVector<Proceso>& procesosOriginales, int quantum) {
+    QVector<ResultadoSimulacion> resultado;
+    QVector<Proceso> procesos = procesosOriginales;
+    QMap<QString, int> tiempoRestante;
+    QQueue<Proceso*> colaListos;
+    int tiempoActual = 0;
+
+    // Inicializar tiempo restante
+    for (const auto& p : procesos) {
+        tiempoRestante[p.PID] = p.BT;
+    }
+
+    // Ordenar procesos por tiempo de llegada
+    std::sort(procesos.begin(), procesos.end(), [](const Proceso& a, const Proceso& b) {
+        return a.AT < b.AT;
+    });
+
+    // Índice para nuevos procesos que llegan
+    int nextProceso = 0;
+
+    while (true) {
+        // Agregar procesos que han llegado a la cola de listos
+        while (nextProceso < procesos.size() && procesos[nextProceso].AT <= tiempoActual) {
+            colaListos.enqueue(&procesos[nextProceso]);
+            nextProceso++;
+        }
+
+        if (colaListos.isEmpty()) {
+            if (nextProceso < procesos.size()) {
+                // No hay procesos listos, avanzar al próximo tiempo de llegada
+                tiempoActual = procesos[nextProceso].AT;
+                continue;
+            } else {
+                // Todos los procesos completados
+                break;
+            }
+        }
+
+        Proceso* actual = colaListos.dequeue();
+        int tiempoEjecucion = qMin(quantum, tiempoRestante[actual->PID]);
+
+        // Registrar el segmento de ejecución
+        resultado.append({actual->PID, tiempoActual, tiempoEjecucion});
+
+        // Actualizar tiempo restante
+        tiempoRestante[actual->PID] -= tiempoEjecucion;
+        tiempoActual += tiempoEjecucion;
+
+        // Agregar procesos que llegaron durante esta ejecución
+        while (nextProceso < procesos.size() && procesos[nextProceso].AT < tiempoActual) {
+            colaListos.enqueue(&procesos[nextProceso]);
+            nextProceso++;
+        }
+
+        // Si el proceso no ha terminado, volver a colocarlo en la cola
+        if (tiempoRestante[actual->PID] > 0) {
+            colaListos.enqueue(actual);
+        }
+    }
+
+    return resultado;
+}
+
+QVector<ResultadoSimulacion> SchedulingWindow::ejecutarPriorityAging(const QVector<Proceso>& procesosOriginales, int intervaloAging) {
+    QVector<ResultadoSimulacion> resultado;
+    QVector<Proceso> procesos = procesosOriginales;
+    std::sort(procesos.begin(), procesos.end(), [](const Proceso& a, const Proceso& b) {
+        return a.AT < b.AT; // Ordenar por tiempo de llegada inicial
+    });
+
+    int tiempoActual = 0;
+    QVector<Proceso*> readyQueue;
+    QMap<QString, int> tiempoRestante;
+    QMap<QString, int> prioridadActual; // Prioridad dinámica con aging
+    QMap<QString, int> ultimoAging;    // Cuando se aplicó último aging
+
+    // Inicialización
+    for (const auto& p : procesos) {
+        tiempoRestante[p.PID] = p.BT;
+        prioridadActual[p.PID] = p.priority;
+        ultimoAging[p.PID] = p.AT;
+    }
+
+    while (true) {
+        // llegado a la ready queue
+        for (auto& p : procesos) {
+            if (p.AT == tiempoActual) {
+                readyQueue.push_back(&p);
+            }
+        }
+
+        // envejecimiento: cada 5 ciclos aumentamos prioridad (disminuimos valor)
+        for (auto& p : readyQueue) {
+            if (tiempoActual - ultimoAging[p->PID] >= intervaloAging) {
+                prioridadActual[p->PID] = std::max(1, prioridadActual[p->PID] - 1);
+                ultimoAging[p->PID] = tiempoActual;
+            }
+        }
+
+        //seleccionar proceso con mayor prioridad, osea el de menor valor. priority 1 es el mas alto
+
+        Proceso* elegido = nullptr;
+        if (!readyQueue.isEmpty()) {
+            std::sort(readyQueue.begin(), readyQueue.end(), [&](Proceso* a, Proceso* b) {
+                return prioridadActual[a->PID] < prioridadActual[b->PID]; // Menor valor = mayor prioridad
+            });
+            elegido = readyQueue.first();
+        }
+
+        // Ejecutar el proceso elegido o IDLE
+        if (elegido && tiempoRestante[elegido->PID] > 0) {
+            // Continuar o crear nuevo segmento
+            if (!resultado.isEmpty() && resultado.last().PID == elegido->PID) {
+                resultado.last().duracion++;
+            } else {
+                resultado.append({elegido->PID, tiempoActual, 1});
+            }
+
+            tiempoRestante[elegido->PID]--;
+
+            // Eliminar si terminó
+            if (tiempoRestante[elegido->PID] == 0) {
+                readyQueue.removeAll(elegido);
+            }
+        }
+
+        // verificar condición de término
+        bool todosTerminados = true;
+        for (const auto& p : procesos) {
+            if (tiempoRestante[p.PID] > 0) {
+                todosTerminados = false;
+                break;
+            }
+        }
+        if (todosTerminados) break;
+
+        tiempoActual++;
+    }
+
+    return resultado;
+}
+
 void SchedulingWindow::calcularMetricas(const QVector<ResultadoSimulacion>& resultado) {
     QMap<QString, int> tiempoLlegada;
     QMap<QString, int> tiempoFinalizacion;
-    QMap<QString, int> tiempoInicioEjecucion;  // NUEVO: para el primer inicio
+    QMap<QString, int> tiempoInicioEjecucion;
     QMap<QString, int> tiempoCPUUsado;
 
     // Inicializar con datos de los procesos
@@ -312,10 +514,16 @@ void SchedulingWindow::calcularMetricas(const QVector<ResultadoSimulacion>& resu
 }
 
 
-//aqui voy a poner las funciones de simulacion
-void SchedulingWindow::animarSimulacion(const QVector<ResultadoSimulacion>& resultado, const QString& nombreAlgoritmo) {
-    limpiarEscena();
+void SchedulingWindow::animarSimulacion(const QVector<ResultadoSimulacion>& resultado, const QString& nombreAlgoritmo, int heightMult) {
+    //limpiarEscena();
     ui->metricsTextEdit->append("Simulación: " + nombreAlgoritmo);
+
+    // Configuración de espaciado
+    const int BLOCK_HEIGHT = 30;
+    const int VERTICAL_SPACING = 100;  // Espacio entre simulaciones
+    const int BASE_Y_OFFSET = 20;     // Margen superior
+
+    int yOffset = BASE_Y_OFFSET + (heightMult - 1) * VERTICAL_SPACING;
 
     // Inicializar variables de animación
     cicloAnimacion = 0;
@@ -325,7 +533,7 @@ void SchedulingWindow::animarSimulacion(const QVector<ResultadoSimulacion>& resu
     tiemposEsperaAnimacion.clear();
     tiemposRespuestaAnimacion.clear();
     indexAnimacion = 0;
-    bloqueActual = 0;  // Nuevo contador para bloques dentro de un proceso
+    bloqueActual = 0;  // contador para bloques dentro de un proceso
     resultadoActual = resultado;
     procesoActual = nullptr;  // Para rastrear el proceso actual
 
@@ -344,7 +552,7 @@ void SchedulingWindow::animarSimulacion(const QVector<ResultadoSimulacion>& resu
                 // Dibujar números de ciclo
                 for (int i = 0; i < cicloAnimacion; ++i) {
                     QGraphicsTextItem *cicloText = escenaGantt->addText(QString::number(i));
-                    cicloText->setPos(i * 30, 40);
+                    cicloText->setPos(i * 30, yOffset + BLOCK_HEIGHT + 5);
                 }
 
                 // Calcular métricas
@@ -361,16 +569,16 @@ void SchedulingWindow::animarSimulacion(const QVector<ResultadoSimulacion>& resu
 
             procesoActual = &resultadoActual[indexAnimacion];
 
-            // Asignar color si es nuevo proceso
-            if (!colorMapAnimacion.contains(procesoActual->PID)) {
-                colorMapAnimacion[procesoActual->PID] = coloresProcesos[colorIndexAnimacion++ % coloresProcesos.size()];
+            if (!globalColorMap.contains(procesoActual->PID)) {
+                int colorIndex = globalColorMap.size() % coloresProcesos.size();
+                globalColorMap[procesoActual->PID] = coloresProcesos[colorIndex];
             }
 
             // Dibujar tiempo en el que no tiene proceso
             while (cicloAnimacion < procesoActual->inicio) {
-                QGraphicsRectItem *idle = escenaGantt->addRect(xAnimacion, 0, 30, 30, pen, QBrush(Qt::lightGray));
+                QGraphicsRectItem *idle = escenaGantt->addRect(xAnimacion, yOffset, 30, BLOCK_HEIGHT, pen, QBrush(Qt::lightGray));
                 QGraphicsTextItem *text = escenaGantt->addText("IDLE");
-                text->setPos(xAnimacion + 5, 5);
+                text->setPos(xAnimacion, yOffset + 5);
                 xAnimacion += 30;
                 cicloAnimacion++;
             }
@@ -380,9 +588,10 @@ void SchedulingWindow::animarSimulacion(const QVector<ResultadoSimulacion>& resu
 
         // Dibujar solo un bloque del proceso actual
         if (bloqueActual < procesoActual->duracion) {
-            QGraphicsRectItem *rect = escenaGantt->addRect(xAnimacion, 0, 30, 30, pen, QBrush(colorMapAnimacion[procesoActual->PID]));
+            QColor procesoColor = globalColorMap[procesoActual->PID];
+            QGraphicsRectItem *rect = escenaGantt->addRect(xAnimacion, yOffset, 30, BLOCK_HEIGHT, pen, QBrush(procesoColor));
             QGraphicsTextItem *text = escenaGantt->addText(procesoActual->PID);
-            text->setPos(xAnimacion + 10, 5);
+            text->setPos(xAnimacion + 10, yOffset + 5);
             xAnimacion += 30;
             cicloAnimacion++;
             bloqueActual++;
@@ -406,6 +615,7 @@ void SchedulingWindow::animarSimulacion(const QVector<ResultadoSimulacion>& resu
 // aca voy a poner los destructores
 void SchedulingWindow::limpiarEscena() {
     escenaGantt->clear();
+    globalColorMap.clear();
 }
 
 SchedulingWindow::~SchedulingWindow()
