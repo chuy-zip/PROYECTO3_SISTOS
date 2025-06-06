@@ -73,6 +73,7 @@ private:
     int displayCycle;
     QTimer *displayTimer;
     void drawSingleCycle(int cycleToDraw);
+    void drawAccumulatedCycles(int upToCycle);
 };
 
 #endif // SYNCHRONIZATIONWINDOW_H

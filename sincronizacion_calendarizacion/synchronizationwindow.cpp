@@ -342,23 +342,104 @@ void SynchronizationWindow::runSimulationStep()
 
         // Iniciar la visualización paso a paso
         displayCycle = -1;
-        displayTimer->start(1000);  // 1 segundo entre ciclos
+        displayTimer->start(1000);
         return;
     }
 
     currentCycle++;
 }
 
+void SynchronizationWindow::drawAccumulatedCycles(int upToCycle)
+{
+    scene->clear();
+
+    const int blockWidth = 100;
+    const int blockHeight = 70;
+    const int verticalSpacing = 15;
+    const int horizontalSpacing = 30;
+    const int startX = 20;
+    const int startY = 50;
+
+    // Dibujar encabezados de ciclo
+    for (int cycle = 0; cycle <= upToCycle; cycle++) {
+        QGraphicsTextItem *cycleText = scene->addText(QString::number(cycle));
+        cycleText->setPos(startX + cycle * (blockWidth + horizontalSpacing) + blockWidth/2 - 10, startY - 30);
+
+        // Resaltar el ciclo más reciente
+        if (cycle == upToCycle) {
+            QGraphicsRectItem *highlight = scene->addRect(
+                startX + cycle * (blockWidth + horizontalSpacing) - 5, startY - 35,
+                blockWidth + 10, 25,
+                QPen(Qt::red, 2), Qt::NoBrush);
+        }
+    }
+
+    // Dibujar todos los ciclos hasta upToCycle
+    for (int cycle = 0; cycle <= upToCycle; cycle++) {
+        int verticalOffset = 0;
+
+        // Dibujar acciones accedidas en este ciclo
+        for (Action &action : actions) {
+            if (action.completionCycle == cycle) {
+                int x = startX + cycle * (blockWidth + horizontalSpacing);
+                int y = startY + verticalOffset;
+
+                QGraphicsRectItem *rect = scene->addRect(x, y, blockWidth, blockHeight,
+                                                         QPen(Qt::black), QBrush(Qt::green));
+
+                QGraphicsTextItem *pidText = scene->addText(QString("%1 - %2").arg(action.PID).arg(action.resource));
+                pidText->setPos(x + 5, y + 5);
+
+                QGraphicsTextItem *actionText = scene->addText(action.action);
+                actionText->setPos(x + 5, y + 25);
+
+                QGraphicsTextItem *statusText = scene->addText("ACCESSED");
+                statusText->setPos(x + 5, y + 45);
+
+                verticalOffset += blockHeight + verticalSpacing;
+            }
+        }
+
+        // Dibujar acciones en espera en este ciclo
+        for (Action &action : actions) {
+            bool isWaiting = (action.waitingSince != -1) &&
+                             (!action.completed ||
+                              (action.completed && action.completionCycle > cycle));
+
+            if (isWaiting && action.waitingSince <= cycle) {
+                int x = startX + cycle * (blockWidth + horizontalSpacing);
+                int y = startY + verticalOffset;
+
+                QGraphicsRectItem *rect = scene->addRect(x, y, blockWidth, blockHeight,
+                                                         QPen(Qt::black), QBrush(QColor(255, 165, 0)));
+
+                QGraphicsTextItem *pidText = scene->addText(QString("%1 - %2").arg(action.PID).arg(action.resource));
+                pidText->setPos(x + 5, y + 5);
+
+                QGraphicsTextItem *actionText = scene->addText(action.action);
+                actionText->setPos(x + 5, y + 25);
+
+                QGraphicsTextItem *statusText = scene->addText("WAITING");
+                statusText->setPos(x + 5, y + 45);
+
+                verticalOffset += blockHeight + verticalSpacing;
+            }
+        }
+    }
+
+    ui->graphicsView->fitInView(scene->sceneRect(), Qt::KeepAspectRatio);
+}
+
 void SynchronizationWindow::showNextCycle()
 {
     displayCycle++;
 
-    if (displayCycle >= cycleStates.size()) {
+    if (displayCycle > currentCycle) {
         displayTimer->stop();
         return;
     }
 
-    drawSingleCycle(displayCycle);
+    drawAccumulatedCycles(displayCycle);
 }
 
 void SynchronizationWindow::drawSingleCycle(int cycleToDraw)
