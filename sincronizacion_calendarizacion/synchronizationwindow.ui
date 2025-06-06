@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>800</width>
+    <width>900</width>
     <height>600</height>
    </rect>
   </property>
@@ -32,16 +32,9 @@
            </item>
            <item>
             <property name="text">
-             <string>Semáforos</string>
+             <string>Semáforo</string>
             </property>
            </item>
-          </widget>
-         </item>
-         <item>
-          <widget class="QPushButton" name="btnLoadProcesses">
-           <property name="text">
-            <string>Cargar Procesos</string>
-           </property>
           </widget>
          </item>
          <item>
@@ -69,9 +62,6 @@
        </widget>
       </item>
       <item>
-       <widget class="QTextEdit" name="txtProcesses"/>
-      </item>
-      <item>
        <widget class="QTextEdit" name="txtResources"/>
       </item>
       <item>
@@ -85,8 +75,8 @@
        <widget class="QGraphicsView" name="graphicsView">
         <property name="minimumSize">
          <size>
-          <width>500</width>
-          <height>300</height>
+          <width>600</width>
+          <height>400</height>
          </size>
         </property>
        </widget>
@@ -103,7 +93,7 @@
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>800</width>
+     <width>900</width>
      <height>21</height>
     </rect>
    </property>

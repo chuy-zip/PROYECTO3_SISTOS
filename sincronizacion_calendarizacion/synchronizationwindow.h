@@ -11,22 +11,6 @@ namespace Ui {
 class SynchronizationWindow;
 }
 
-// clase para los procesos
-struct Process {
-    QString PID;
-    int BT;  // burst Time
-    int AT;  // arrival Time
-    int priority;
-};
-
-// clase para los recursos
-struct Resource {
-    QString name;
-    int count;
-    int available;
-};
-
-// clase para las acciones de cada proceso y con que recurso en que ciclo
 struct Action {
     QString PID;
     QString action; // "READ" or "WRITE"
@@ -34,13 +18,10 @@ struct Action {
     int cycle;
 };
 
-// autoexplicatorio
-struct SimulationStep {
-    QString PID;
-    QString resource;
-    QString action;
-    int cycle;
-    bool success;
+struct Resource {
+    QString name;
+    int count;
+    int available;
 };
 
 class SynchronizationWindow : public QMainWindow
@@ -51,25 +32,31 @@ public:
     explicit SynchronizationWindow(QWidget *parent = nullptr);
     ~SynchronizationWindow();
 
+private slots:
+    void onLoadResourcesClicked();
+    void onLoadActionsClicked();
+    void onRunSimulationClicked();
+    void runSimulationStep();
+    void onSyncTypeChanged(int index);
+
 private:
     Ui::SynchronizationWindow *ui;
     QGraphicsScene *scene;
-    QVector<Process> processes;
     QVector<Resource> resources;
     QVector<Action> actions;
-    QVector<SimulationStep> simulationSteps;
     QMap<QString, QColor> processColors;
     QTimer *simulationTimer;
     int currentCycle;
-    int currentStep;
+    int maxCycles;
+    bool useSemaphore;
 
-    void parseProcessFile(const QString &content);
     void parseResourceFile(const QString &content);
     void parseActionFile(const QString &content);
-    void prepareSimulationSteps();
+    void prepareSimulation();
     void drawTimeline();
-    void updateResourceAvailability();
     void logMessage(const QString &message);
+    void resetSimulation();
+    QColor getProcessColor(const QString &pid);
 };
 
 #endif // SYNCHRONIZATIONWINDOW_H
