@@ -536,6 +536,7 @@ void SchedulingWindow::animarSimulacion(const QVector<ResultadoSimulacion>& resu
     bloqueActual = 0;  // contador para bloques dentro de un proceso
     resultadoActual = resultado;
     procesoActual = nullptr;  // Para rastrear el proceso actual
+    enModoIdle = false;
 
     // Configuración inicial de la escena
     QPen pen(Qt::black);
@@ -544,6 +545,23 @@ void SchedulingWindow::animarSimulacion(const QVector<ResultadoSimulacion>& resu
 
     QTimer* timer = new QTimer(this);
     connect(timer, &QTimer::timeout, this, [=]() {
+
+        if (enModoIdle) {
+            // Dibujar un solo bloque IDLE por tick del timer
+            QGraphicsRectItem *idle = escenaGantt->addRect(xAnimacion, yOffset, 30, BLOCK_HEIGHT, pen, QBrush(Qt::lightGray));
+            QGraphicsTextItem *text = escenaGantt->addText("IDLE");
+            text->setPos(xAnimacion, yOffset + 5);
+            xAnimacion += 30;
+            cicloAnimacion++;
+
+            // Verificar si hemos completado todos los bloques IDLE necesarios
+            if (cicloAnimacion >= procesoActual->inicio) {
+                enModoIdle = false;
+                bloqueActual = 0;
+            }
+            return;
+        }
+
         // Si no hay proceso actual, obtener el siguiente
         if (procesoActual == nullptr) {
 
@@ -574,13 +592,10 @@ void SchedulingWindow::animarSimulacion(const QVector<ResultadoSimulacion>& resu
                 globalColorMap[procesoActual->PID] = coloresProcesos[colorIndex];
             }
 
-            // Dibujar tiempo en el que no tiene proceso
-            while (cicloAnimacion < procesoActual->inicio) {
-                QGraphicsRectItem *idle = escenaGantt->addRect(xAnimacion, yOffset, 30, BLOCK_HEIGHT, pen, QBrush(Qt::lightGray));
-                QGraphicsTextItem *text = escenaGantt->addText("IDLE");
-                text->setPos(xAnimacion, yOffset + 5);
-                xAnimacion += 30;
-                cicloAnimacion++;
+            // Entrar en modo IDLE si es necesario
+            if (cicloAnimacion < procesoActual->inicio) {
+                enModoIdle = true;
+                return;  // Dejar que el próximo tick maneje el IDLE
             }
 
             bloqueActual = 0;  // Resetear contador de bloques
@@ -591,7 +606,7 @@ void SchedulingWindow::animarSimulacion(const QVector<ResultadoSimulacion>& resu
             QColor procesoColor = globalColorMap[procesoActual->PID];
             QGraphicsRectItem *rect = escenaGantt->addRect(xAnimacion, yOffset, 30, BLOCK_HEIGHT, pen, QBrush(procesoColor));
             QGraphicsTextItem *text = escenaGantt->addText(procesoActual->PID);
-            text->setPos(xAnimacion + 10, yOffset + 5);
+            text->setPos(xAnimacion + 5, yOffset + 5);
             xAnimacion += 30;
             cicloAnimacion++;
             bloqueActual++;
