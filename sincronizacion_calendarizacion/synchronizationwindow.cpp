@@ -38,6 +38,15 @@ SynchronizationWindow::SynchronizationWindow(QWidget *parent) :
     connect(displayTimer, &QTimer::timeout, this, &SynchronizationWindow::showNextCycle);
 
     displayCycle = -1;
+
+    ui->graphicsView->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOn);
+    ui->graphicsView->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOn);
+    ui->graphicsView->setRenderHint(QPainter::Antialiasing);
+    ui->graphicsView->setRenderHint(QPainter::TextAntialiasing);
+    ui->graphicsView->setDragMode(QGraphicsView::ScrollHandDrag);
+    ui->graphicsView->setTransformationAnchor(QGraphicsView::AnchorUnderMouse);
+    ui->graphicsView->setResizeAnchor(QGraphicsView::AnchorUnderMouse);
+    ui->graphicsView->setOptimizationFlag(QGraphicsView::DontAdjustForAntialiasing, true);
 }
 
 SynchronizationWindow::~SynchronizationWindow()
@@ -360,6 +369,12 @@ void SynchronizationWindow::drawAccumulatedCycles(int upToCycle)
     const int startX = 20;
     const int startY = 50;
 
+    // Calcular el ancho total necesario
+    int totalWidth = startX + (upToCycle + 1) * (blockWidth + horizontalSpacing) + 20;
+    int totalHeight = 800;  // Altura fija suficiente
+
+    scene->setSceneRect(0, 0, totalWidth, totalHeight);
+
     // Dibujar encabezados de ciclo
     for (int cycle = 0; cycle <= upToCycle; cycle++) {
         QGraphicsTextItem *cycleText = scene->addText(QString::number(cycle));
@@ -428,6 +443,10 @@ void SynchronizationWindow::drawAccumulatedCycles(int upToCycle)
     }
 
     ui->graphicsView->fitInView(scene->sceneRect(), Qt::KeepAspectRatio);
+    ui->graphicsView->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOn);
+    ui->graphicsView->setRenderHint(QPainter::Antialiasing);
+    ui->graphicsView->setRenderHint(QPainter::TextAntialiasing);
+    ui->graphicsView->setDragMode(QGraphicsView::ScrollHandDrag);
 }
 
 void SynchronizationWindow::showNextCycle()
