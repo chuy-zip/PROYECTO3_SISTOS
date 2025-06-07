@@ -64,6 +64,7 @@ private:
     QVector<int> tiemposRespuestaAnimacion;
     int indexAnimacion;
     QVector<ResultadoSimulacion> resultadoActual;
+    bool enModoIdle;
 
     int bloqueActual;                   // Para rastrear bloques dentro de un proceso
     const ResultadoSimulacion* procesoActual;
